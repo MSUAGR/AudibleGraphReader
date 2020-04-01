@@ -294,7 +294,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         # store colors and positions for each line in line_data
         for j in range(len(new_datapoints)):
             val += 1
-            line_positions[i].append((val, (new_datapoints[j][i][0], new_datapoints[j][i][1])))
+            line_positions[i].append((val, new_datapoints[j][i][1]))
     
     # line_data gets keys based on the number of lines and the values are line_positions values
     # min and max points are dictionaries containing the min and max value for each line
@@ -311,16 +311,14 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     max_position = [[] for k in range(num_lines)]
     for i in range(len(line_data)):
         for j in range(len(line_data[i+1])):
-            y = line_data[i+1][j][1][1]
-            x = line_data[i+1][j][1][0]
+            y = line_data[i+1][j][1]
             min_position[i].append((y))
-            max_position[i].append((x))
+            max_position[i].append((y))
             min_points[i+1] = (max(min_position[i]))
-            print('ggg', line_data[i+1][j][1][1])
             max_points[i+1] = (min(max_position[i]))
     print(line_data)
-    print(min_points)
-    print(max_points)
+    print("min", min_points)
+    print("max", max_points)
     '''
     print("The points where colors exist are at x, y pixel: ", new_datapoints)
     print("The colors at the corresponding positions are: ", new_datapoints_colors)
@@ -484,10 +482,10 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
 
 def main():
     os.chdir('images')
-    img = Image.open("image2.png")
-    img = ImageEnhance.Sharpness(img.convert('RGB'))
-    img = img.enhance(5.0).save('eimage2.png')
-    img = cv2.imread('eimage2.png')
+    img = Image.open("image4.png")
+    #img = ImageEnhance.Sharpness(img.convert('RGB'))
+    #img = img.enhance(5.0).save('eimage2.png')
+    img = cv2.imread('image4.png')
     
     img_size = img.shape
     print(img_size)
