@@ -31,8 +31,8 @@ import statistics
 import math
 from itertools import islice
 
-# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh
+#pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Alex
 
 
@@ -51,7 +51,7 @@ def getTrendlines(points, y_max):
             x2 = values[i + 1][0]
             y2 = values[i + 1][1]
             # print("x1: ", x1, "y1: ", y1, "x2: ", x2, "y2: ", y2)
-            slope = (y2 - y1) / (x2 - x1)
+            slope = round((y2 - y1) / (x2 - x1), 2)
             if slope > 0:
                 if slope/MAX_Y_VAL > 0.5:
                     if key in relative_slopes:
@@ -707,21 +707,22 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, num_lines,
 
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[0])):
-            yAxis_values = math.ceil(
-                ((cropped_y_pixels_height - float(new_datapoints[i][j][1])) - y_pixel_line) / pixels_divider)
+            yAxis_values = round(
+                ((cropped_y_pixels_height - float(new_datapoints[i][j][1])) - y_pixel_line) / pixels_divider, 2)
 
             datapoints[j].append(yAxis_values)
     return datapoints
 
 
 if __name__ == '__main__':
-
+    file_path = r'C:\Users\Josh Hilger\OneDrive\Work and School Shit\450 Project\AudibleGraphReader\images\image4.png'
+    '''
     if len(argv) == 2:
         file_path = sys.argv[1]
     else:
         print(" Error: Argument Error")
         quit()
-
+    '''
     ## Check file acceptability ##
 
     # file path must not be greater than 247 characters
