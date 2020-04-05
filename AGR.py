@@ -380,7 +380,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
 
     # print(d2)
     # the most common value in the top list should be the number of pixels from the bounding box to x-axis values
-    most_common = max(set(top), key=top.count)
+    
 
     # list that holds the x axis values
     x_axis_values = []
@@ -499,24 +499,49 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         new_datapoints.append(res)
         new_datapoints_colors.append(col)
         final_colors.append(fin_col)
-
-    # num_lines is found by getting the length of a sublist in new_datapoints
+    
+    # num_lines is found by getting the most common length of the sublists in new_datapoints
     # new_datapoints is a list made up of sublists containing the coordinates of a color pixel for each x-axis value
     # eg [[[73, 151], [73, 191]], [[103, 159], [103, 202]], [[133, 145], [133, 156]]] this list has two lines and
     # 3 x-axis values
+    most_common_list = []
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[i])):
-            num_lines = len(new_datapoints[i])
+            most_common_list.append(len(new_datapoints[i]))
+    most_common = max(set(most_common_list), key=most_common_list.count)
+    num_lines = most_common    
     
-    # colors are added to final_colors in a sublist within a list so that for each line a color will correspond to the
-    # x,y coordinate at an x-axis value
+    # colors are being stored in this dict. If the colors at the first x-axis value are not equal to the actual number
+    # of lines, eg if a datapoint is covered by another, check several lines
+    line_colors_dict = {}
+    line = 1
+    for i in range(num_lines):
+        if len(new_datapoints_colors[0]) == num_lines:
+            line_colors_dict[line] = new_datapoints_colors[0][i]
+            line += 1
+        elif len(new_datapoints_colors[1]) == num_lines:
+            line_colors_dict[line] = new_datapoints_colors[0][i]
+            line += 1
+        elif len(new_datapoints_colors[2]) == num_lines:
+            line_colors_dict[line] = new_datapoints_colors[0][i]
+            line += 1
+    print('A', line_colors_dict)
+    
+    # if there are less values in the new_datapoints list than there are lines, append "None" to the list to show the 
+    # system could not get any data
     for i in range(len(new_datapoints)):
-        for j in range(len(new_datapoints[i])):
-            # print(new_datapoints[i][j])
-            # print(new_datapoints_colors[i][j])
-            final_colors.append(
-                [new_datapoints[i][j], new_datapoints_colors[i][j]])
-    print('new', final_colors)
+        if len(new_datapoints[i]) < num_lines:
+            print(type(len(new_datapoints_colors[i])))
+            diff = len(new_datapoints_colors[0]) - len(new_datapoints[i])
+            for j in range(diff):
+                new_datapoints[i].append(None)
+                final_colors[i].append([None, [None, None, None]])
+                new_datapoints_colors[i].append(None)
+                
+    #print('s', final_colors)
+    for i in range(len(final_colors)):
+
+        print('new', final_colors[i], "\n")
     new = []
     buffer = 50
     
@@ -539,28 +564,35 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
             and int(final_colors[i][j][1][1]) in range(int(line_colors[1]-buffer), int(line_colors[1]+buffer)) \
             and int(final_colors[i][j][1][2]) in range(int(line_colors[2]-buffer), int(line_colors[2]+buffer)):
     '''
-    line_colors_dict = {}
     
-    line = 1
-    for i in range(num_lines):
-        line_colors_dict[line] = new_datapoints_colors[0][i]
-        line += 1
-    #print(list(line_colors_dict.values())[0])
-    print(new_datapoints)
-    '''
-    correct_final_colors = []
+    #print(new_datapoints)
+    print(final_colors, "\n")
+    correct_final_colors = [[] for k in range(num_lines)]
     for i in range(len(final_colors)):
-        if int(final_colors[i][1][1][0]) in range(int(line_colors_dict[0]-buffer), int(line_colors_dict[0]+buffer)) \
-        and int(final_colors[i][1][1][1]) in range(int(line_colors_dict[1]-buffer), int(line_colors_dict[1]+buffer)) \
-        and int(final_colors[i][1][1][2]) in range(int(line_colors_dict[2]-buffer), int(line_colors_dict[2]+buffer)):
-            correct_final_colors.append(final_colors[i])
-    '''
-    print('ppp', final_colors)
+        
+        for j in range(num_lines):
+            first_val = list(line_colors_dict.values())[j]
+            if None in final_colors[i][j][1]:
+                print('fd', final_colors[i][j][1], "\n")
+                correct_final_colors[j].append([None, None])
+            else:
+                for k in range(num_lines):
+                    
+                    if None in final_colors[i][k][1]:
+                        pass
+                    else:
+                        if int(final_colors[i][k][1][0]) in range(int(first_val[0]-buffer), int(first_val[0]+buffer)) \
+                        and int(final_colors[i][k][1][1]) in range(int(first_val[1]-buffer), int(first_val[1]+buffer)) \
+                        and int(final_colors[i][k][1][2]) in range(int(first_val[2]-buffer), int(first_val[2]+buffer)):
+                            correct_final_colors[j].append(final_colors[i][k])
+    for i in range(len(correct_final_colors)):
+        print('ppp', correct_final_colors[i], "\n")
+        
     # a list with sublists. number of sublists is determined by the number of lines
     line_positions = [[] for k in range(num_lines)]
     yAxis_values = []
     yAxis_values = calculate_yAxis_values(
-        cropped_img, y_pixel_line, new_datapoints, final_colors, num_lines, y_axis_values, top_of_graph)
+        cropped_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph)
     
     print('yyy', yAxis_values)
     # each sublist in line_positions represents each line's y coordinates and a number from 1 to the number of x-axis values
@@ -587,8 +619,10 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     for i in range(len(line_data)):
         for j in range(len(line_data[i+1])):
             y = line_data[i+1][j][1]
-            min_position[i].append((y))
-            max_position[i].append((y))
+            if y != None:
+                min_position[i].append((y))
+            if y != None:
+                max_position[i].append((y))
             min_points[i+1] = (min(min_position[i]))
             max_points[i+1] = (max(max_position[i]))
     print(min_points)
@@ -739,13 +773,14 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
     for i in range(len(datapoints)):
         if len(datapoints[i]) > 2:
             new_datapoints.append(datapoints[i])
+    
 
     # finds the median y pixel value for each datapoint and replaces the consecutive value lists with the median
     for i in range(len(new_datapoints)):
         median = math.ceil(statistics.median(new_datapoints[i]))
         new_datapoints.remove(new_datapoints[i])
         new_datapoints.insert(i, [x_axis_points, median])
-    
+        
     # add to a new list the colors that appear at the specified datapoints
     for i in range(len(new_datapoints)):
         # colors at the positions where datapoints exist
@@ -763,7 +798,7 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
     return new_datapoints, new_datapoints_colors, top_of_graph, final_colors
 
 
-def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, final_colors, num_lines, y_axis_values, top_of_graph):
+def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph):
     cropped_y_pixels_height = cropped_img.shape[0]
     cropped_x_pixels_width = cropped_img.shape[1]
 
@@ -773,14 +808,17 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, final_colo
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
     pixels_divider = distance_from_top_to_x_axis / float(y_axis_values[0])
 
-    print(len(new_datapoints), len(final_colors))
+    print(len(new_datapoints), len(correct_final_colors))
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[0])):
-            print('fds', final_colors[i][j][0][1])
-            yAxis_values = round(
-                ((cropped_y_pixels_height - float(final_colors[i][j][0][1])) - y_pixel_line) / pixels_divider, 2)
+            print(correct_final_colors[j][i][0])
+            if correct_final_colors[j][i][0] == None:
+                datapoints[j].append(None)
+            else:
+                yAxis_values = round(
+                    ((cropped_y_pixels_height - float(correct_final_colors[j][i][0][1])) - y_pixel_line) / pixels_divider, 2)
 
-            datapoints[j].append(yAxis_values)
+                datapoints[j].append(yAxis_values)
     return datapoints
 
 def get_x_axis(event,x,y,flags,param):
