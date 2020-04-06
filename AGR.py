@@ -35,8 +35,8 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tess
 #pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Alex
 
-x_axis_pos = [(30, 214), (419, 215)]
-y_axis_pos = [(32, 215), (30, 38)]
+x_axis_pos = []
+y_axis_pos = []
 def getTrendlines(points, y_max):
     # Correct answer
     # dict({1: [10, 7, -9], 2: [5, 1, -4]})
@@ -319,13 +319,8 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
-        '''
-        cv2.namedWindow('image')
-        cv2.setMouseCallback('image', get_x_axis)
-        cv2.imshow('image', cropped_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-        '''
+        click_img_x_axis(cropped_img)
+        print(x_axis_pos)
         y_pixel_line = x_axis_pos[0][1]
         longest_yline_size = x_axis_pos[1][0] - x_axis_pos[0][0]
         print("The x-axis is at y pixel ", y_pixel_line)
@@ -336,14 +331,8 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
     else:
-        '''
-        cv2.namedWindow('image')
-        cv2.setMouseCallback('image', get_y_axis)
-        cv2.imshow('image', cropped_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        click_img_y_axis(cropped_img)
         print(y_axis_pos)
-        '''
         x_pixel_line = x_axis_pos[0][0]
         longest_xline_size = x_axis_pos[0][1] - y_axis_pos[1][1]
         print("The y-axis is at x pixel ", x_pixel_line)
@@ -359,6 +348,22 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists
 
 
+def click_img_x_axis(cropped_img):
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', get_x_axis)
+    cv2.imshow('image', cropped_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+        
+    
+def click_img_y_axis(cropped_img):
+    cv2.namedWindow('image')
+    cv2.setMouseCallback('image', get_y_axis)
+    cv2.imshow('image', cropped_img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    
+    
 def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yline_size, longest_xline_size):
     cropped_y_pixels_height = cropped_img.shape[0]
     cropped_x_pixels_width = cropped_img.shape[1]
@@ -761,6 +766,7 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
         else:
             datapoints.append([color_positions[i][1]])
 
+    
     # add colors to the datapoints_colors
     for i in range(len(colors)):
         if colors[i-1] == colors[i]:
