@@ -872,7 +872,6 @@ def get_graph_title(cropped_img):
 
 
 if __name__ == '__main__':
-    #file_path = r'C:\Users\Josh Hilger\OneDrive\Work and School Shit\450 Project\AudibleGraphReader\images\eimage2.png'
 
     if len(argv) == 2:
         file_path = sys.argv[1]
