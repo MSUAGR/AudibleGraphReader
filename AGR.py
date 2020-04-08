@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The Audible Graph Reader Project #
-# Updated 4.1.20                   #
+# Updated 4.7.20                   #
 
 # User must install pytesseract version 5
 # US2 Task 3 not implemented
