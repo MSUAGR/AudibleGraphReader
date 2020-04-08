@@ -346,7 +346,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     #     for listitem in ylist:
     #         filehandle.write('%s\n' % listitem)
     # print("ffff", x_axis_exists)
-    return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists
+    return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin
 
 
 def click_img_x_axis(cropped_img):
@@ -647,7 +647,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     #cv2.imshow('image', x_axis_img)
     # cv2.waitKey(0)
 
-    return line_data, x_axis_values, num_lines
+    return line_data, x_axis_values, num_lines, x_axis_title
 
 
 def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
@@ -726,7 +726,7 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
     # cv2.waitKey(0)
     biggest_max = y_axis_values[0]
 
-    return y_axis_values, biggest_max
+    return y_axis_values, biggest_max, y_axis_title
 
 
 def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points):
@@ -971,28 +971,29 @@ if __name__ == '__main__':
 
     xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
 
-    y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists = store_coords(
+    y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
         cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
 
-    y_axis_values, biggest_max = get_ydata(
+    y_axis_values, biggest_max, y_axis_title = get_ydata(
         cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
 
-    line_data, x_axis_values, num_lines = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
-                                                    x_axis_exists, longest_yline_size, longest_xline_size)
-
-    # main title code
-    # crop the image to top 1/3
-
-    GRAPH_TITLE = str(get_graph_title(cropped_img))
+    line_data, x_axis_values, num_lines, x_axis_title = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
+                                                                  x_axis_exists, longest_yline_size, longest_xline_size)
 
     # ASSIGN VARIABLES
 
     X_AXIS_MIN = 0
+    J_GRAPH_TITLE = str(get_graph_title(cropped_img))
+    J_X_AXIS_TITLE = x_axis_title
+    J_Y_AXIS_TITLE = y_axis_title
+    J_X_AXIS_VALUES = x_axis_values
+    J_Y_AXIS_VALUES = y_axis_values
+    J_ORIGIN = str(origin)
 
-    # X_AXIS_TITLE = "COMPLETE ME"
-    # Y_AXIS_TITLE = "COMPLETE ME"
-    # jX_AXIS_VALUES = "COMPLETE ME"
-    # jY_AXIS_VALUES = "COMPLETE ME"
+    # SET CORRECT VALS HERE
+    J_FOUND_COLORS = "BLURPLE, (0,0,0), (10,255,0)"
+    J_DATA_POINTS = "dataPoints"  # xcoords
+    J_LEGEND_DATA = "sixNine"  # dict
 
     # pass dict of points
     # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
@@ -1001,7 +1002,16 @@ if __name__ == '__main__':
         line_data, x_axis_values, num_lines, biggest_max)
 
     x = {
-        "main_title": GRAPH_TITLE
+        "image_name": new_file_name,
+        "main_title": J_GRAPH_TITLE,  # STRING
+        "x_axis_title": J_X_AXIS_TITLE,  # STRING
+        "x_axis_values": J_X_AXIS_VALUES,  # LIST
+        "y_axis_title": J_Y_AXIS_TITLE,  # STRING
+        "y_axis_values": J_Y_AXIS_VALUES,  # LIST
+        "found_colors": J_FOUND_COLORS,  # LIST OF RGB
+        "data_points": J_DATA_POINTS,  # LIST OF TUPLES
+        "origin": J_ORIGIN,  # TUPLE
+        "legend_data": J_LEGEND_DATA  # DICT (line names, line colors)
     }
 
     try:
@@ -1016,8 +1026,9 @@ if __name__ == '__main__':
         jsonData = json.dumps(x,  indent=2)  # with newline
         # jsonData = json.dumps(x)   # without newline
         # print(jsonData)
-        # print("successfully dumpt json")
+        print(" info: Successfully dumpt json")
     except:
+        print(" Error: Unable to format json")
         pass
 
     try:
