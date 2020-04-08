@@ -991,9 +991,9 @@ if __name__ == '__main__':
     J_ORIGIN = str(origin)
 
     # SET CORRECT VALS HERE
-    J_FOUND_COLORS = "BLURPLE, (0,0,0), (10,255,0)"
-    J_DATA_POINTS = "dataPoints"  # xcoords
-    J_LEGEND_DATA = "sixNine"  # dict
+    J_FOUND_COLORS = "toBeDetermined"
+    J_DATA_POINTS = "toBeDetermined"  # xcoords
+    J_LEGEND_DATA = "toBeDetermined"  # dict
 
     # pass dict of points
     # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
