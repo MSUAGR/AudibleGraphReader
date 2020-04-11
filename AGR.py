@@ -629,10 +629,11 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
             y = line_data[i+1][j][1]
             if y != None:
                 min_position[i].append((y))
+                print('dddssss', min_position[i])
             if y != None:
                 max_position[i].append((y))
-            min_points[i+1] = (min(min_position[i]))
-            max_points[i+1] = (max(max_position[i]))
+        min_points[i+1] = (min(min_position[i]))
+        max_points[i+1] = (max(max_position[i]))
     print(min_points)
     print(max_points)
 
@@ -844,7 +845,7 @@ def get_y_axis(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDBLCLK:
         y_axis_pos.append((x, y))
 if __name__ == '__main__':
-    file_path = r'C:\Users\Josh Hilger\OneDrive\Work and School Shit\450 Project\AudibleGraphReader\images\unnamed.png'
+    file_path = r'C:\Users\Josh Hilger\OneDrive\Work and School Shit\450 Project\AudibleGraphReader\images\image1.png'
     '''
     if len(argv) == 2:
         file_path = sys.argv[1]
