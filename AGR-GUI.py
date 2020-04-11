@@ -54,7 +54,7 @@ def upload():
     if img.size[0] > 690 or img.size[1] > 545:
         img = img.resize((690, 545), Image.ANTIALIAS)
     openImg = ImageTk.PhotoImage(img)
-    image = tk.Label(master=back, width=690, height=505, image=openImg)
+    image = tk.Label(master=background, width=690, height=505, image=openImg)
     image.image = openImg
     image.place(x=160, y=120)
 
@@ -72,7 +72,7 @@ def readPreviousGraph():
         img = img.resize((690, 545), Image.ANTIALIAS)
 
     openImg = ImageTk.PhotoImage(img)
-    image = tk.Label(master=back, width=690, height=545, image=openImg)
+    image = tk.Label(master=background, width=690, height=545, image=openImg)
     image.image = openImg
     image.place(x=160, y=120)
 
