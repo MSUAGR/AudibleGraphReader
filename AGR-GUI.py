@@ -16,6 +16,7 @@ import os
 # Global
 playing_bool = False
 global img
+sound_file = ''
 GUI = tk.Tk()
 listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
@@ -118,6 +119,7 @@ def replay():
     global sound_file
 
     if str(sound_file) != '':  # This doesnt work
+
         if playing_bool or stream.is_active():
             stream.stop_stream()
 
@@ -132,7 +134,9 @@ def replay():
                             stream_callback=callback)
             return stream
         except:
-            print(" Error: Sound file does not exist ")
+            print(" Error: Bad Sound file ")
+    else:
+        print(" Error: Sound file does not exist ")
 
 
 def play_pause():  # playing_bool):
@@ -160,18 +164,6 @@ def key(event):
     print("Pressed ", key_char, " ", key_symb, " ", key_code)
     # play_pause_button.place_forget()
     # play_pause_button.place(x=50, y=60)
-    '''
-    if play_pause_button["state"] == "normal":
-            play_pause_button["state"] = "disabled"
-        elif play_pause_button["state"] == "disabled":
-            play_pause_button["state"] = "normal"
-        else:
-            play_pause_button["state"] == "normal"
-
-        b1["state"] == "normal":
-        b1["state"] = "disabled"
-
-    '''
 
     if event.keysym == 'space':
         play_pause()
