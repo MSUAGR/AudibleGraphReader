@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # The Audible Graph Reader Project #
-# Updated 4.10.20                   #
+# Updated 4.11.20                  #
 
 # User must install pytesseract version 5
 
@@ -32,7 +32,7 @@ from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh/Alex
-# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 
 x_axis_pos = []  # image1 (98, 395), (543, 395)
 y_axis_pos = []  # image1 (95, 393), (97, 85)
