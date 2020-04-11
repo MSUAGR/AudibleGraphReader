@@ -1,3 +1,9 @@
+# utf-8
+# 4.11.2020
+# US-6 Task 1 : Graphical User Interface
+
+# blank.wav must exist in same dir as this file
+
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
@@ -38,7 +44,7 @@ stream.stop_stream()
 ## Begin Functions ##
 
 
-def uploadButton():
+def upload():
     global listbox
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
                                            ("Image Files", ".png .jpg .gif .img")])
@@ -111,7 +117,7 @@ def replay():
     global wf
     global sound_file
 
-    if str(sound_file) != '':
+    if str(sound_file) != '':  # This doesnt work
         if playing_bool or stream.is_active():
             stream.stop_stream()
 
@@ -164,7 +170,6 @@ def key(event):
 
         b1["state"] == "normal":
         b1["state"] = "disabled"
-        b2["text"] = "enable"
 
     '''
 
@@ -191,7 +196,7 @@ def key(event):
     elif event.keysym == 'r':
         replay()
     elif event.keysym == 'u':
-        uploadButton()
+        upload()
 
 
 def exitAGR():
@@ -244,73 +249,87 @@ GUI.title('Audible Graph Reader')
 GUI.geometry("900x700")  # You want the size of the app to be 500x500
 GUI.resizable(0, 0)  # Don't allow resizing in the x or y direction
 
-back = tk.Frame(master=GUI, bg='white')
+background = tk.Frame(master=GUI, bg='white')
 # Don't allow the widgets inside to determine the frame's width / height
-back.pack_propagate(0)
-back.pack(fill=tk.BOTH, expand=1)  # Expand the frame to fill the root window
-
+background.pack_propagate(0)
+# Expand the frame to fill the root window
+background.pack(fill=tk.BOTH, expand=1)
 
 listbox.place(x=180, y=80)
 
 # Changed variables so you don't have these set to None from .pack()
-welcomeSPace = tk.Label(master=back, text='',
-                        bg='white', fg='black', font=("Impact", 20))
-welcomeSPace.pack()
-welcome = tk.Label(master=back, text='Welcome to the Audible Graph Reader',
-                   bg='white', fg='black', font=("Impact", 20))
-welcome.pack()
-upload = tk.Button(master=back, text='Upload Graph',
-                   width=19, command=uploadButton)
-upload.place(x=30, y=120)
-read = tk.Button(master=back, text='Read Graph',
+welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
+                         bg='white', fg='black', font=("Impact", 20))
+welcome_label.pack()
+upload_button = tk.Button(master=background, text='Upload Graph',
+                          width=19, command=upload)
+upload_button.place(x=30, y=120)
+read = tk.Button(master=background, text='Read Graph',
                  width=19, command=readTextfile)
 read.place(x=30, y=180)
-tutorial = tk.Button(master=back, text='Tutorial',
-                     width=19, command=play_tutorial)
-tutorial.place(x=30, y=240)
-previous = tk.Button(master=back, text='Read Previous Graph',
-                     width=19, command=readPreviousGraph)
-previous.place(x=30, y=300)
-pausePlay = tk.Button(master=back, text='Pause / Play',
-                      width=19, command=play_pause)
-pausePlay.place(x=30, y=360)
+tutorial_button = tk.Button(master=background, text='Tutorial',
+                            width=19, command=play_tutorial)
+tutorial_button.place(x=30, y=240)
+load_previous_graph = tk.Button(master=background, text='Load Previous Graph',
+                                width=19, command=readPreviousGraph)
+load_previous_graph.place(x=30, y=300)
+pause_play_button = tk.Button(master=background, text='Pause / Play',
+                              width=19, command=play_pause)
+pause_play_button.place(x=30, y=360)
 
-replayButton = tk.Button(master=back, text='Replay', width=19, command=replay)
-replayButton.place(x=30, y=420)
+replay_button = tk.Button(
+    master=background, text='Replay', width=19, command=replay)
+replay_button.place(x=30, y=420)
 
-exitButton = tk.Button(master=back, text='Exit AGR', width=19, command=exitAGR)
+
+exitButton = tk.Button(master=background, text='Exit AGR',
+                       width=19, command=exitAGR)
 exitButton.place(x=30, y=640)
 
-line1Button = tk.Button(master=back, text='Line 1', width=8, command=line1Desc)
-line1Button.place(x=190, y=640)
+line_1_button = tk.Button(master=background, text='Line 1',
+                          width=8, command=line1Desc)
+line_1_button.place(x=190, y=640)
 
-line2Button = tk.Button(master=back, text='Line 2', width=8, command=line2Desc)
-line2Button.place(x=260, y=640)
+line_2_button = tk.Button(master=background, text='Line 2',
+                          width=8, command=line2Desc)
+line_2_button.place(x=260, y=640)
 
-line3Button = tk.Button(master=back, text='Line 3', width=8, command=line3Desc)
-line3Button.place(x=330, y=640)
+line_3_button = tk.Button(master=background, text='Line 3',
+                          width=8, command=line3Desc)
+line_3_button.place(x=330, y=640)
 
-line4Button = tk.Button(master=back, text='Line 4', width=8, command=line4Desc)
-line4Button.place(x=400, y=640)
+line_4_button = tk.Button(master=background, text='Line 4',
+                          width=8, command=line4Desc)
+line_4_button.place(x=400, y=640)
 
-line5Button = tk.Button(master=back, text='Line 5', width=8, command=line5Desc)
-line5Button.place(x=470, y=640)
+line_5_button = tk.Button(master=background, text='Line 5',
+                          width=8, command=line5Desc)
+line_5_button.place(x=470, y=640)
 
-line6Button = tk.Button(master=back, text='Line 6', width=8, command=line6Desc)
-line6Button.place(x=540, y=640)
+line_6_button = tk.Button(master=background, text='Line 6',
+                          width=8, command=line6Desc)
+line_6_button.place(x=540, y=640)
 
-line7Button = tk.Button(master=back, text='Line 7', width=8, command=line7Desc)
-line7Button.place(x=610, y=640)
+line_7_button = tk.Button(master=background, text='Line 7',
+                          width=8, command=line7Desc)
+line_7_button.place(x=610, y=640)
 
-line8Button = tk.Button(master=back, text='Line 8', width=8, command=line8Desc)
-line8Button.place(x=680, y=640)
+line_8_button = tk.Button(master=background, text='Line 8',
+                          width=8, command=line8Desc)
+line_8_button.place(x=680, y=640)
 
-
-# works, just doesn't work in a function yet
-# im = Image.open('images\image4.png')
-# ph = ImageTk.PhotoImage(im)
-# image = tk.Label(master=back, width=690, height=545, image=ph)
-# image.place(x=160, y=120)
+# Disable buttons on startup
+line_1_button["state"] = "disabled"
+line_2_button["state"] = "disabled"
+line_3_button["state"] = "disabled"
+line_4_button["state"] = "disabled"
+line_5_button["state"] = "disabled"
+line_6_button["state"] = "disabled"
+line_7_button["state"] = "disabled"
+line_8_button["state"] = "disabled"
+replay_button["state"] = "disabled"
+load_previous_graph["state"] = "disabled"
+pause_play_button["state"] = "disabled"
 
 GUI.bind("<Key>", key)  # calls key (function above) on Keyboard input
 GUI.resizable(False, False)
