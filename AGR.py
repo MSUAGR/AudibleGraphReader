@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 # The Audible Graph Reader Project #
-# Updated 4.7.20                   #
+# Updated 4.10.20                   #
 
 # User must install pytesseract version 5
-# US2 Task 3 not implemented
 
 # Run with image file as arg
 #  ./AGR.py image4.gif
@@ -30,12 +29,13 @@ import re
 import statistics
 import math
 from itertools import islice
+from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 
-# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh/Alex
+# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 
-x_axis_pos = []
-y_axis_pos = []
+x_axis_pos = []  # image1 (98, 395), (543, 395)
+y_axis_pos = []  # image1 (95, 393), (97, 85)
 
 
 def getTrendlines(points, y_max):
@@ -302,7 +302,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         else:
             x_values[ycoords[i][1]] += 1
 
-    # sorts the dicctionary based on the number of times a pixel appears at one y coordinate
+    # sorts the dictionary based on the number of times a pixel appears at one y coordinate
     sorted_ydict = OrderedDict(
         sorted(x_values.items(), key=itemgetter(1), reverse=True))
 
@@ -315,8 +315,8 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
 
     print("origin: ", origin)  # , 'aaaaa')
 
-    # if the longest line is bigger than half the width of the page it is the x-axis
-    if longest_yline_size > 0.5*cropped_x_pixels_width:
+# if the longest line is bigger than half the width of the page it is the x-axis
+    if longest_yline_size > 1*cropped_x_pixels_width:
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
@@ -328,14 +328,14 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The x-axis is ", longest_yline_size, " pixels long")
         x_axis_exists = True
 
-    if longest_xline_size > 0.5*cropped_y_pixels_height:
+    if longest_xline_size > 1*cropped_y_pixels_height:
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
     else:
         click_img_y_axis(cropped_img)
         print(y_axis_pos)
-        x_pixel_line = x_axis_pos[0][0]
-        longest_xline_size = x_axis_pos[0][1] - y_axis_pos[1][1]
+        x_pixel_line = y_axis_pos[0][0]
+        longest_xline_size = y_axis_pos[0][1] - y_axis_pos[1][1]
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
         y_axis_exists = True
@@ -370,8 +370,8 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     cropped_x_pixels_width = cropped_img.shape[1]
 
     if x_axis_exists == True:
-        x_axis_img = cropped_img[y_pixel_line +
-                                 5: cropped_y_pixels_height, 0: cropped_x_pixels_width]
+        x_axis_img = cropped_img[y_pixel_line -
+                                 0: cropped_y_pixels_height, 0: cropped_x_pixels_width]
     else:
         x_axis_img = cropped_img[round(cropped_y_pixels_height*0.82): round(
             cropped_y_pixels_height*0.8)+40, 0: cropped_x_pixels_width]
@@ -496,7 +496,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         x_axis_points = x_axis_value_medians[0]
         x_axis_value_datapoints.append(x_axis_points)
 
-    # for each line the coordinates and the colors at those coordinates are saved in new_datapoints and new_datapoints_colors
+   # for each line the coordinates and the colors at those coordinates are saved in new_datapoints and new_datapoints_colors
     for i in range(len(x_axis_value_medians)):
         x_axis_points = x_axis_value_medians[i]
         res, col, top_of_graph, fin_col = get_line_positions(
@@ -521,14 +521,14 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     line_colors_dict = {}
     line = 1
     for i in range(num_lines):
-        if len(new_datapoints_colors[0]) == num_lines:
+        if len(new_datapoints_colors[0]) == num_lines and new_datapoints_colors[0][i][0] != None:
             line_colors_dict[line] = new_datapoints_colors[0][i]
             line += 1
-        elif len(new_datapoints_colors[1]) == num_lines:
-            line_colors_dict[line] = new_datapoints_colors[0][i]
+        elif len(new_datapoints_colors[1]) == num_lines and new_datapoints_colors[1][i][0] != None:
+            line_colors_dict[line] = new_datapoints_colors[1][i]
             line += 1
-        elif len(new_datapoints_colors[2]) == num_lines:
-            line_colors_dict[line] = new_datapoints_colors[0][i]
+        elif len(new_datapoints_colors[2]) == num_lines and new_datapoints_colors[2][i][0] != None:
+            line_colors_dict[line] = new_datapoints_colors[2][i]
             line += 1
     print('A', line_colors_dict)
 
@@ -536,63 +536,62 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     # system could not get any data
     for i in range(len(new_datapoints)):
         if len(new_datapoints[i]) < num_lines:
-            print(type(len(new_datapoints_colors[i])))
-            diff = len(new_datapoints_colors[0]) - len(new_datapoints[i])
+            diff = num_lines - len(new_datapoints[i])
             for j in range(diff):
-                new_datapoints[i].append(None)
-                final_colors[i].append([None, [None, None, None]])
-                new_datapoints_colors[i].append(None)
+                new_datapoints[i].append([None, None])
+                final_colors[i].append([[None, None], [None, None, None]])
+                new_datapoints_colors[i].append([None, None, None])
 
-    #print('s', final_colors)
+    print('s', num_lines, "\n")
+    print('f', new_datapoints_colors[0])
+    '''
     for i in range(len(final_colors)):
 
         print('new', final_colors[i], "\n")
-    new = []
+    '''
+    print('most', new_datapoints)
+
     buffer = 50
-
-    '''
-    for i in range(len(final_colors)):
-        for j in range(len(new_datapoints[0])):
-            line_colors = new_datapoints_colors[0][j]
-            x = new_datapoints[i][j][0]
-            y = new_datapoints[i][j][1]
-            line_val = cropped_img[y, x]
-            if line_val[0] in range(line_colors[0]-buffer, line_colors[0]+buffer) \
-            and line_val[1] in range(line_colors[1]-buffer, line_colors[1]+buffer) \
-            and line_val[2] in range(line_colors[2]-buffer, line_colors[2]+buffer):
-                new.append(new_datapoints[i][j])
-    
-    
-    line_colors = new_datapoints_colors[0][j]
-            print(j, final_colors[i])
-            if int(final_colors[i][j][1][0]) in range(int(line_colors[0]-buffer), int(line_colors[0]+buffer)) \
-            and int(final_colors[i][j][1][1]) in range(int(line_colors[1]-buffer), int(line_colors[1]+buffer)) \
-            and int(final_colors[i][j][1][2]) in range(int(line_colors[2]-buffer), int(line_colors[2]+buffer)):
-    '''
-
-    # print(new_datapoints)
-    print(final_colors, "\n")
     correct_final_colors = [[] for k in range(num_lines)]
+    # iterate over the number of x-axis values
     for i in range(len(final_colors)):
 
+        # iterate over the number of points on the graph per x-axis value
         for j in range(num_lines):
-            first_val = list(line_colors_dict.values())[j]
-            if None in final_colors[i][j][1]:
-                print('fd', final_colors[i][j][1], "\n")
-                correct_final_colors[j].append([None, None])
-            else:
-                for k in range(num_lines):
 
+            first_val = list(line_colors_dict.values())[j]
+            print('lll', first_val, j)
+            print('asdf', final_colors[i][j][1], "\n")
+            if None in final_colors[i][j][1]:
+                correct_final_colors[j].append(
+                    [[None, None], [None, None, None]])
+                print('fd', correct_final_colors[j], "\n")
+
+            else:
+                color_index = 0
+                # iterate over each datapoint and corresponding color to see if the color matches one in line_colors_dict
+                for k in range(num_lines):
+                    print('yoyo', final_colors[i][k][1])
                     if None in final_colors[i][k][1]:
                         pass
                     else:
+                        # if the colors match a color in the line_colors_dict then append them to their own sublist
                         if int(final_colors[i][k][1][0]) in range(int(first_val[0]-buffer), int(first_val[0]+buffer)) \
                                 and int(final_colors[i][k][1][1]) in range(int(first_val[1]-buffer), int(first_val[1]+buffer)) \
                                 and int(final_colors[i][k][1][2]) in range(int(first_val[2]-buffer), int(first_val[2]+buffer)):
                             correct_final_colors[j].append(final_colors[i][k])
+                            print('kj', correct_final_colors[j], "\n")
+                            color_index += 1
+                if color_index == 0:
+
+                    correct_final_colors[j].append(
+                        [[None, None], [None, None, None]])
+
     for i in range(len(correct_final_colors)):
+        print(i)
         print('ppp', correct_final_colors[i], "\n")
 
+    print('ggggggggg', len(correct_final_colors[0]))
     # a list with sublists. number of sublists is determined by the number of lines
     line_positions = [[] for k in range(num_lines)]
     yAxis_values = []
@@ -626,10 +625,11 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
             y = line_data[i+1][j][1]
             if y != None:
                 min_position[i].append((y))
+                print('dddssss', min_position[i])
             if y != None:
                 max_position[i].append((y))
-            min_points[i+1] = (min(min_position[i]))
-            max_points[i+1] = (max(max_position[i]))
+        min_points[i+1] = (min(min_position[i]))
+        max_points[i+1] = (max(max_position[i]))
     print(min_points)
     print(max_points)
 
@@ -644,7 +644,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
                         [i], d2['width'][i], d2['height'][i])
         cv2.rectangle(x_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    #cv2.imshow('image', x_axis_img)
+    # cv2.imshow('image', x_axis_img)
     # cv2.waitKey(0)
 
     return line_data, x_axis_values, num_lines, x_axis_title
@@ -722,7 +722,7 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
                         [i], d2['width'][i], d2['height'][i])
         cv2.rectangle(y_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    #cv2.imshow('image', y_axis_img)
+    # cv2.imshow('image', y_axis_img)
     # cv2.waitKey(0)
     biggest_max = y_axis_values[0]
 
@@ -789,7 +789,7 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
     for i in range(len(new_datapoints)):
         # colors at the positions where datapoints exist
         d = cropped_img[new_datapoints[i][1], x_axis_points]
-        if d[0] > 230 and d[1] > 230 and d[2] > 230 or d[0] < 30 and d[1] < 30 and d[2] < 30:
+        if d[0] > 230 and d[1] > 230 and d[2] > 230:
             continue
         else:
             new_datapoints_colors.append(d)
@@ -812,11 +812,15 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
     pixels_divider = distance_from_top_to_x_axis / float(y_axis_values[0])
 
-    print(len(new_datapoints), len(correct_final_colors))
+    '''
+    for i in range(len(correct_final_colors)):
+        print('ya', correct_final_colors[i], "\n")
+    '''
+    print(len(new_datapoints), len(new_datapoints[0]))
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[0])):
             print(correct_final_colors[j][i][0])
-            if correct_final_colors[j][i][0] == None:
+            if correct_final_colors[j][i][0][1] == None:
                 datapoints[j].append(None)
             else:
                 yAxis_values = round(
@@ -872,12 +876,14 @@ def get_graph_title(cropped_img):
 
 
 if __name__ == '__main__':
-
+    # file_path = r'C:\Users\Josh Hilger\OneDrive\Work and School Shit\450 Project\AudibleGraphReader\images\image1.png'
     if len(argv) == 2:
         file_path = sys.argv[1]
     else:
         print(" Error: Argument Error")
         quit()
+
+    ## Check file acceptability ##
 
     ## Check file acceptability ##
 
@@ -891,7 +897,7 @@ if __name__ == '__main__':
     # print("filename: ", file_name) # filename:  C:\Users\Think\Desktop\CSC 450\myCode\CompiledProg\image4
     # print("fil_ext: ", file_extension) # fil_ext:  .gif
     og_file_name = path_leaf(file_path)
-    #print("ogFileName: ", og_file_name)
+    # print("ogFileName: ", og_file_name)
 
     # iterate over the characters in regex and check if they are in the file path
     regex = '<>:"|?*'
@@ -955,7 +961,7 @@ if __name__ == '__main__':
     print(img_size)
     y_pixels_height = img.shape[0]
     x_pixels_width = img.shape[1]
-    cropped_img = img[10: y_pixels_height-10, 10: x_pixels_width-10]
+    cropped_img = img[0: y_pixels_height-0, 0: x_pixels_width-0]
     cropped_y_pixels_height = img.shape[0]
     cropped_x_pixels_width = img.shape[1]
     print(cropped_img.shape)
@@ -1037,5 +1043,29 @@ if __name__ == '__main__':
         print(" Error: Unable to write json")
 
     f.close()
+
+    audText = "Graph " + timestamp + " \n"
+    audText += "The graph is titled " + GRAPH_TITLE + ". \n"
+
+    aud_text_file_name = new_file_name + '.txt'
+
+    try:
+        f = open(aud_text_file_name, "w+")  # create read/write
+        print(" info: Successfully created text file")
+        try:
+            f.write(audText)
+            print(" info: Successfully wrote text data")
+            try:
+                os.chmod(aud_text_file_name, S_IREAD | S_IRGRP |
+                         S_IROTH)  # lock file to read-only
+                print(" info: Succesfully write locked text file")
+            except:
+                print(" Error: Unable to lock file to read only")
+        except:
+            print(" Error: Unable to write text data")
+        f.close
+
+    except:
+        print(" Error: Unable to create file")
 
     print(" info: Program Terminating")
