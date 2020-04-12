@@ -62,7 +62,7 @@ def upload():
     print(file_path + " has been opened in the preview window")
 
 
-def readPreviousGraph():
+def load_previous_graph():
     # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
     AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
@@ -80,7 +80,7 @@ def readPreviousGraph():
     print(file_path + " has been opened in the preview window")
 
 
-def readTextfile():
+def read_text_file():
     print("ReadingTextFile?")
 
 
@@ -158,19 +158,31 @@ def play_pause():  # playing_bool):
 
 
 def key(event):
+    global line_1_button
+
+    # pretty print keys
     key_char = event.char
     key_symb = event.keysym
     key_code = event.keycode
     print("Pressed ", key_char, " ", key_symb, " ", key_code)
+
     # play_pause_button.place_forget()
     # play_pause_button.place(x=50, y=60)
 
     if event.keysym == 'space':
         play_pause()
     elif event.keysym == '1':
-        play_line_desc(1)
+        print("button1 state: ", line_1_button["state"])
+        if line_1_button["state"] == "normal":
+            play_line_desc(1)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '2':
-        play_line_desc(2)
+        print("button2 state: ", line_2_button["state"])
+        if line_1_button["state"] == "normal":
+            play_line_desc(2)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '3':
         play_line_desc(3)
     elif event.keysym == '4':
@@ -191,43 +203,198 @@ def key(event):
         upload()
 
 
+def place_line_desc_buttons(number_of_lines):
+    global line_1_button
+    global line_2_button
+    global line_3_button
+    global line_4_button
+    global line_5_button
+    global line_6_button
+    global line_7_button
+    global line_8_button
+    if number_of_lines == 8:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+        line_6_button.place(x=540, y=640)
+        line_6_button["state"] = "normal"
+        line_7_button.place(x=610, y=640)
+        line_7_button["state"] = "normal"
+        line_8_button.place(x=680, y=640)
+        line_8_button["state"] = "normal"
+    elif number_of_lines == 7:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+        line_6_button.place(x=540, y=640)
+        line_6_button["state"] = "normal"
+        line_7_button.place(x=610, y=640)
+        line_7_button["state"] = "normal"
+    elif number_of_lines == 6:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+        line_6_button.place(x=540, y=640)
+        line_6_button["state"] = "normal"
+    elif number_of_lines == 5:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+    elif number_of_lines == 4:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+    elif number_of_lines == 3:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+    elif number_of_lines == 2:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+    elif number_of_lines == 1:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+    else:
+        print(
+            " Error: bad args on place_line_desc_buttons(), must be integer between 1 and 8")
+
+
+def remove_line_desc_buttons(number_of_lines):
+    global line_1_button
+    global line_2_button
+    global line_3_button
+    global line_4_button
+    global line_5_button
+    global line_6_button
+    global line_7_button
+    global line_8_button
+    if number_of_lines == 8:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+        line_6_button.place_forget()
+        line_6_button["state"] = "disabled"
+        line_7_button.place_forget()
+        line_7_button["state"] = "disabled"
+        line_8_button.place_forget()
+        line_8_button["state"] = "disabled"
+    elif number_of_lines == 7:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+        line_6_button.place_forget()
+        line_6_button["state"] = "disabled"
+        line_7_button.place_forget()
+        line_7_button["state"] = "disabled"
+    elif number_of_lines == 6:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+        line_6_button.place_forget()
+        line_6_button["state"] = "disabled"
+    elif number_of_lines == 5:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+    elif number_of_lines == 4:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+    elif number_of_lines == 3:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+    elif number_of_lines == 2:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+    elif number_of_lines == 1:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+    else:
+        print(" Error: bad args on remove_line_desc_buttons() line buttons, must be integer between 1 and 8")
+
+
 def exitAGR():
 
     GUI.destroy()
 
 ## End oF Functions ##
-
-
-def line1Desc():
-    play_line_desc(1)
-
-
-def line2Desc():
-    play_line_desc(2)
-
-
-def line3Desc():
-    play_line_desc(3)
-
-
-def line4Desc():
-    play_line_desc(4)
-
-
-def line5Desc():
-    play_line_desc(5)
-
-
-def line6Desc():
-    play_line_desc(6)
-
-
-def line7Desc():
-    play_line_desc(7)
-
-
-def line8Desc():
-    play_line_desc(8)
 
 
 # If you have a large number of widgets, like it looks like you will for your
@@ -253,75 +420,78 @@ listbox.place(x=180, y=80)
 welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
                          bg='white', fg='black', font=("Impact", 20))
 welcome_label.pack()
+
 upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
-upload_button.place(x=30, y=120)
-read = tk.Button(master=background, text='Read Graph',
-                 width=19, command=readTextfile)
-read.place(x=30, y=180)
+
+play_entire_graph_desc = tk.Button(master=background, text='Explain Graph',
+                                   width=19, command=read_text_file)
+
 tutorial_button = tk.Button(master=background, text='Tutorial',
                             width=19, command=play_tutorial)
-tutorial_button.place(x=30, y=240)
+
 load_previous_graph = tk.Button(master=background, text='Load Previous Graph',
-                                width=19, command=readPreviousGraph)
-load_previous_graph.place(x=30, y=300)
+                                width=19, command=load_previous_graph)
+
 pause_play_button = tk.Button(master=background, text='Pause / Play',
                               width=19, command=play_pause)
-pause_play_button.place(x=30, y=360)
 
 replay_button = tk.Button(
     master=background, text='Replay', width=19, command=replay)
-replay_button.place(x=30, y=420)
 
-
-exitButton = tk.Button(master=background, text='Exit AGR',
-                       width=19, command=exitAGR)
-exitButton.place(x=30, y=640)
+exit_button = tk.Button(master=background, text='Exit AGR',
+                        width=19, command=exitAGR)
 
 line_1_button = tk.Button(master=background, text='Line 1',
-                          width=8, command=line1Desc)
-line_1_button.place(x=190, y=640)
+                          width=8, command=lambda: play_line_desc(1))
 
 line_2_button = tk.Button(master=background, text='Line 2',
-                          width=8, command=line2Desc)
-line_2_button.place(x=260, y=640)
+                          width=8, command=lambda: play_line_desc(2))
 
 line_3_button = tk.Button(master=background, text='Line 3',
-                          width=8, command=line3Desc)
-line_3_button.place(x=330, y=640)
+                          width=8, command=lambda: play_line_desc(3))
 
 line_4_button = tk.Button(master=background, text='Line 4',
-                          width=8, command=line4Desc)
-line_4_button.place(x=400, y=640)
+                          width=8, command=lambda: play_line_desc(4))
 
 line_5_button = tk.Button(master=background, text='Line 5',
-                          width=8, command=line5Desc)
-line_5_button.place(x=470, y=640)
+                          width=8, command=lambda: play_line_desc(5))
 
 line_6_button = tk.Button(master=background, text='Line 6',
-                          width=8, command=line6Desc)
-line_6_button.place(x=540, y=640)
+                          width=8, command=lambda: play_line_desc(6))
 
 line_7_button = tk.Button(master=background, text='Line 7',
-                          width=8, command=line7Desc)
-line_7_button.place(x=610, y=640)
+                          width=8, command=lambda: play_line_desc(7))
 
 line_8_button = tk.Button(master=background, text='Line 8',
-                          width=8, command=line8Desc)
-line_8_button.place(x=680, y=640)
+                          width=8, command=lambda: play_line_desc(8))
 
-# Disable buttons on startup
-line_1_button["state"] = "disabled"
-line_2_button["state"] = "disabled"
-line_3_button["state"] = "disabled"
-line_4_button["state"] = "disabled"
-line_5_button["state"] = "disabled"
-line_6_button["state"] = "disabled"
-line_7_button["state"] = "disabled"
-line_8_button["state"] = "disabled"
+
+upload_button.place(x=30, y=120)
+play_entire_graph_desc.place(x=30, y=180)
+tutorial_button.place(x=30, y=240)
+load_previous_graph.place(x=30, y=300)
+pause_play_button.place(x=30, y=360)
+replay_button.place(x=30, y=420)
+exit_button.place(x=30, y=640)
+
 replay_button["state"] = "disabled"
 load_previous_graph["state"] = "disabled"
 pause_play_button["state"] = "disabled"
+
+# TODO
+# Verify file path
+# Add hotkey for entire graph description
+# Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
+# Add functionality to grab proper files (.wav .json ...) from folder on old graph load
+#
+
+# Once analyzed
+remove_line_desc_buttons(8)
+
+# And place buttons using num_lines
+# place_line_desc_buttons(num_lines)
+
 
 GUI.bind("<Key>", key)  # calls key (function above) on Keyboard input
 GUI.resizable(False, False)
