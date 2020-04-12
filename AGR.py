@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # utf-8
 
+
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
 # 4.11.2020
+
 
 # User must install pytesseract version 5
 # blank.wav must exist in same dir as this file
@@ -1404,6 +1406,7 @@ def get_y_axis(event, x, y, flags, param):
         y_axis_pos.append((x, y))
 
 
+
 def get_graph_title(cropped_img):
 
     cropped_img = cropped_img[0: round(
@@ -1435,6 +1438,7 @@ def get_graph_title(cropped_img):
     JoinedGraphTitle = ''.join(GraphTitle)
     # print(JoinedGraphTitle)
     return JoinedGraphTitle
+
 
 ## End oF Functions ##
 
@@ -1540,6 +1544,7 @@ GUI.resizable(False, False)
 
 GUI.mainloop()
 
+
 # stop stream
 stream.stop_stream()
 stream.close()
@@ -1548,4 +1553,3 @@ wf.close()
 # close PyAudio
 p.terminate()
 
-print("Program Terminated")
