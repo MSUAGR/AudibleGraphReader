@@ -18,6 +18,7 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
+from tkinter import messagebox
 from PIL import ImageTk, Image
 import pyaudio
 import wave
@@ -89,7 +90,7 @@ def upload():
     listbox.insert(END, file_path)
 
     if (len(file_path) > 247):
-        tk.messagebox.showerror(
+        messagebox.showerror(
             title="AGR:Error", message="File path is too long.")
         print(" Error: File path is too long")
     else:
@@ -99,14 +100,14 @@ def upload():
         regex = '<>:"|?*'
         for char in regex:
             if char in og_file_name:
-                tk.messagebox.showerror(
+                messagebox.showerror(
                     title="AGR:Error", message="File path has illegal chars.")
                 print(" Error: File path must not contain ",
                       str(char), " or <>\":|?*")
                 return False
 
         if os.path.getsize(file_path) >= 1000000:
-            tk.messagebox.showerror(
+            messagebox.showerror(
                 title="AGR:Error", message="File is too large.")
             print(" Error: File is too large, must be less than 1 MB")
             return False
@@ -885,6 +886,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
+        messagebox.showinfo(title = "Get x-axis", message = "Double click at the origin and the end of the x-axis")
         click_img_x_axis(cropped_img)
         print(x_axis_pos)
         y_pixel_line = x_axis_pos[0][1]
@@ -898,6 +900,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The y-axis is ", longest_xline_size, " pixels long")
         
     else:
+        messagebox.showinfo(title = "Get y-axis", message = "Double click at the origin and the end of the y-axis")
         click_img_y_axis(cropped_img)
         print(y_axis_pos)
         x_pixel_line = y_axis_pos[0][0]
@@ -921,7 +924,8 @@ def click_img_x_axis(cropped_img):
     cv2.imshow('image', cropped_img)
     #cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    if len(x_axis_pos) == 2:
+        cv2.destroyAllWindows()
 
 
 def click_img_y_axis(cropped_img):
@@ -930,7 +934,8 @@ def click_img_y_axis(cropped_img):
     cv2.imshow('image', cropped_img)
     #cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    if len(y_axis_pos) == 2:
+        cv2.destroyAllWindows()
 
 
 def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size):
@@ -1394,6 +1399,8 @@ def get_x_axis(event, x, y, flags, param):
     global x_axis_pos
     if event == cv2.EVENT_LBUTTONDBLCLK:
         x_axis_pos.append((x, y))
+    if len(x_axis_pos) == 2:
+        cv2.destroyAllWindows()
         
 
 
@@ -1401,6 +1408,8 @@ def get_y_axis(event, x, y, flags, param):
     global y_axis_pos
     if event == cv2.EVENT_LBUTTONDBLCLK:
         y_axis_pos.append((x, y))
+    if len(y_axis_pos) == 2:
+        cv2.destroyAllWindows()
 
 
 
