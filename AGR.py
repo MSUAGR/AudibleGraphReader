@@ -1,24 +1,36 @@
 #!/usr/bin/env python3
+# utf-8
 
-# The Audible Graph Reader Project #
-# Updated 4.1.20                   #
+
+# The Audible Graph Reader Project
+# Copyright 2020 Missouri State University
+
+# 4.11.2020
+
 
 # User must install pytesseract version 5
-# US2 Task 3 not implemented
-
-# Run with image file as arg
-#  ./AGR.py image4.gif
-
+# blank.wav must exist in same dir as this file
+# USE: ./AGR.py
 # On execution AGR/Graphs Folder is created on Desktop
 #       timestamped folder containing json, image and list files are created
 
+
+import tkinter as tk
+from tkinter import *
+from tkinter import filedialog
+from PIL import ImageTk, Image
+import pyaudio
+import wave
+import time
+import os
+#
 import cv2
 import sys
-from sys import argv
-from datetime import datetime  # To use the time functionality
+#from sys import argv
+from datetime import datetime
 import os
 import json
-import ntpath  # To interact with the filepath
+import ntpath  # To interact with filepath
 import shutil  # High level file operations (cp img)
 import numpy as np
 from PIL import Image, ImageEnhance
@@ -30,13 +42,567 @@ import re
 import statistics
 import math
 from itertools import islice
+from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh
+pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh/Alex
 #pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
-# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Alex
 
-x_axis_pos = [] # image1 (98, 395), (543, 395)
-y_axis_pos = [] #image1 (95, 393), (97, 85)
+# Global
+x_axis_pos = []  # image1 (98, 395), (543, 395)
+y_axis_pos = []  # image1 (95, 393), (97, 85)
+playing_bool = False
+global img
+global file_path
+sound_file = ''
+GUI = tk.Tk()
+listbox = Listbox(GUI, height=2, width=100, selectmode='single')
+
+# Open blank Wav file
+wf = wave.open('blank.wav', 'r')
+
+# init PyAudio
+p = pyaudio.PyAudio()
+
+
+def callback(in_data, frame_count, time_info, status):
+    data = wf.readframes(frame_count)
+    return (data, pyaudio.paContinue)
+
+
+# open stream using callback
+stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                channels=wf.getnchannels(),
+                rate=wf.getframerate(),
+                output=True,
+                stream_callback=callback)
+
+# Stop stream from playing initially
+stream.stop_stream()
+
+## Begin Functions ##
+
+
+def upload():
+    global listbox
+    file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
+                                           ("Image Files", ".png .jpg .gif .img")])
+    listbox.insert(END, file_path)
+
+    if (len(file_path) > 247):
+        tk.messagebox.showerror(
+            title="AGR:Error", message="File path is too long.")
+        print(" Error: File path is too long")
+    else:
+        file_name, file_extension = os.path.splitext(file_path)
+        og_file_name = path_leaf(file_path)
+
+        regex = '<>:"|?*'
+        for char in regex:
+            if char in og_file_name:
+                tk.messagebox.showerror(
+                    title="AGR:Error", message="File path has illegal chars.")
+                print(" Error: File path must not contain ",
+                      str(char), " or <>\":|?*")
+                return False
+
+        if os.path.getsize(file_path) >= 1000000:
+            tk.messagebox.showerror(
+                title="AGR:Error", message="File is too large.")
+            print(" Error: File is too large, must be less than 1 MB")
+            return False
+
+        now = datetime.now()
+        timestamp = str(round(datetime.timestamp(now)))
+
+        new_file_name = og_file_name + "." + timestamp
+        # print("newfilename: ", new_file_name)
+
+        desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
+        path = desktop + "/AGR/Graphs/" + new_file_name + "/"
+
+        try:
+            os.makedirs(path)  # Create all necessary directories
+        except OSError:
+            print(" Error: Creation of the directory %s failed" % path)
+        else:
+            print(" info: Successfully created the directory %s" % path)
+
+        shutil.copy(file_path, path)
+
+        # change wd to path of desktop
+        os.chdir(path)
+
+        # check if img is png
+        if og_file_name[-4:] in {'.png'}:
+            img = Image.open(og_file_name)
+            img = cv2.imread(og_file_name)  # 'eimg.png')
+        else:
+            name_no_ext = og_file_name.split('.')
+            # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
+            img = Image.open(og_file_name).save(path + name_no_ext[0] + '.png')
+            img = cv2.imread(name_no_ext[0] + '.png')  # 'eimg.png')
+
+        # img = ImageEnhance.Sharpness(img.convert('RGB'))
+        # img = img.enhance(5.0).save('eimg.png')
+
+        img_size = img.shape
+        print(img_size)
+        y_pixels_height = img.shape[0]
+        x_pixels_width = img.shape[1]
+        cropped_img = img[10: y_pixels_height-10, 10: x_pixels_width-10]
+        cropped_y_pixels_height = img.shape[0]
+        cropped_x_pixels_width = img.shape[1]
+        print(cropped_img.shape)
+        x_axis_exists = True
+        y_axis_exists = True
+
+        cropped_x_axis = cropped_img[round(
+            cropped_y_pixels_height*0.7): cropped_y_pixels_height, 0: cropped_x_pixels_width]
+
+        cropped_y_axis = cropped_img[0: cropped_y_pixels_height, 0: round(
+            cropped_x_pixels_width*0.3)]
+
+        xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
+
+        y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
+            cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
+
+        y_axis_values, biggest_max, y_axis_title = get_ydata(
+            cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
+
+        line_data, x_axis_values, num_lines, x_axis_title = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
+                                                                      x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
+
+        # ASSIGN VARIABLES
+
+        X_AXIS_MIN = 0
+        J_GRAPH_TITLE = str(get_graph_title(cropped_img))
+        J_X_AXIS_TITLE = x_axis_title
+        J_Y_AXIS_TITLE = y_axis_title
+        J_X_AXIS_VALUES = x_axis_values
+        J_Y_AXIS_VALUES = y_axis_values
+        J_ORIGIN = str(origin)
+
+        # SET CORRECT VALS HERE
+        J_FOUND_COLORS = "toBeDetermined"
+        J_DATA_POINTS = "toBeDetermined"  # xcoords
+        J_LEGEND_DATA = "toBeDetermined"  # dict
+
+        # pass dict of points
+        # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
+        #              (1, 200), (2, 429), (3, 400), (4, 300), (5, 500)], 3: [(1, 0), (2, 100), (3, 250), (4, 450), (5, 440)]})
+        trend_line_dict, slopes_strings_dict, intersections_dict = getIntersections(
+            line_data, x_axis_values, num_lines, biggest_max)
+
+        x = {
+            "image_name": new_file_name,
+            "main_title": J_GRAPH_TITLE,  # STRING
+            "x_axis_title": J_X_AXIS_TITLE,  # STRING
+            "x_axis_values": J_X_AXIS_VALUES,  # LIST
+            "y_axis_title": J_Y_AXIS_TITLE,  # STRING
+            "y_axis_values": J_Y_AXIS_VALUES,  # LIST
+            "found_colors": J_FOUND_COLORS,  # LIST OF RGB
+            "data_points": J_DATA_POINTS,  # LIST OF TUPLES
+            "origin": J_ORIGIN,  # TUPLE
+            "legend_data": J_LEGEND_DATA  # DICT (line names, line colors)
+        }
+
+        try:
+            f = open(path + og_file_name +
+                     ".json", 'w')  # Create .json file
+        except:
+            print(" Error: JSON file creation failed")
+        else:
+            print(" info: Successfully created .json")
+
+        try:
+            jsonData = json.dumps(x,  indent=2)  # with newline
+            # jsonData = json.dumps(x)   # without newline
+            # print(jsonData)
+            print(" info: Successfully dumpt json")
+        except:
+            print(" Error: Unable to format json")
+            pass
+
+        try:
+            f.write(jsonData)
+            print(" info: Successfully wrote json data")
+        except:
+            print(" Error: Unable to write json")
+
+        f.close()
+
+        audText = "Graph " + timestamp + " \n"
+        audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
+
+        aud_text_file_name = new_file_name + '.txt'
+
+        try:
+            f = open(aud_text_file_name, "w+")  # create read/write
+            print(" info: Successfully created text file")
+            try:
+                f.write(audText)
+                print(" info: Successfully wrote text data")
+                try:
+                    os.chmod(aud_text_file_name, S_IREAD | S_IRGRP |
+                             S_IROTH)  # lock file to read-only
+                    print(" info: Succesfully write locked text file")
+                except:
+                    print(" Error: Unable to lock file to read only")
+            except:
+                print(" Error: Unable to write text data")
+            f.close
+
+        except:
+            print(" Error: Unable to create file")
+
+        img = Image.open(file_path)
+        if img.size[0] > 690 or img.size[1] > 545:
+            img = img.resize((690, 545), Image.ANTIALIAS)
+        openImg = ImageTk.PhotoImage(img)
+        image = tk.Label(master=background, width=690,
+                         height=505, image=openImg)
+        image.image = openImg
+        image.place(x=160, y=120)
+
+    print(file_path + " has been opened in the preview window")
+
+
+def load_previous_graph():
+    # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
+    AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
+    file_path = filedialog.askopenfilename(
+        initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
+            ("Image Files", ".png .jpg .gif .img")])
+    img = Image.open(file_path)
+    if img.size[0] > 690 or img.size[1] > 545:
+        img = img.resize((690, 545), Image.ANTIALIAS)
+
+    openImg = ImageTk.PhotoImage(img)
+    image = tk.Label(master=background, width=690, height=545, image=openImg)
+    image.image = openImg
+    image.place(x=160, y=120)
+
+    print(file_path + " has been opened in the preview window")
+
+
+def read_text_file():
+    print("ReadingTextFile?")
+
+
+def play_tutorial():
+    print("Playing Tut")
+
+
+def play_line_desc(line_number):
+    global playing_bool
+    global stream
+    global p
+    global wf
+    global sound_file
+
+    if playing_bool or stream.is_active():
+        stream.stop_stream()
+
+    sound_file = str(line_number) + ".wav"
+    print(sound_file)
+    wf = wave.open(sound_file, 'r')
+    print(sound_file, " loaded")
+
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    stream_callback=callback)
+    return stream
+
+
+def replay():
+    global playing_bool
+    global stream
+    global p
+    global wf
+    global sound_file
+
+    if str(sound_file) != '':  # This doesnt work
+
+        if playing_bool or stream.is_active():
+            stream.stop_stream()
+
+        try:
+            wf = wave.open(sound_file, 'r')
+            print(sound_file, " loaded")
+
+            stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                            channels=wf.getnchannels(),
+                            rate=wf.getframerate(),
+                            output=True,
+                            stream_callback=callback)
+            return stream
+        except:
+            print(" Error: Bad Sound file ")
+    else:
+        print(" Error: Sound file does not exist ")
+
+
+def play_pause():  # playing_bool):
+    global playing_bool
+    global stream
+    if stream.is_stopped():
+        print('play pressed')
+        # listbox.insert(END, "Playing Played")
+        stream.start_stream()
+        playing_bool = True
+        return False
+    elif stream.is_active():
+        print('pause pressed')
+        # listbox.insert(END, "Playing Paused")
+        stream.stop_stream()
+        playing_bool = False
+        return False
+    return False
+
+
+def key(event):
+    global line_1_button
+
+    # pretty print keys
+    key_char = event.char
+    key_symb = event.keysym
+    key_code = event.keycode
+    print("Pressed ", key_char, " ", key_symb, " ", key_code)
+
+    # play_pause_button.place_forget()
+    # play_pause_button.place(x=50, y=60)
+
+    if event.keysym == 'space':
+        play_pause()
+    elif event.keysym == '1':
+        print("button1 state: ", line_1_button["state"])
+        if line_1_button["state"] == "normal":
+            play_line_desc(1)
+        else:
+            print(" Error: Line desc not enabled")
+    elif event.keysym == '2':
+        print("button2 state: ", line_2_button["state"])
+        if line_1_button["state"] == "normal":
+            play_line_desc(2)
+        else:
+            print(" Error: Line desc not enabled")
+    elif event.keysym == '3':
+        play_line_desc(3)
+    elif event.keysym == '4':
+        play_line_desc(4)
+    elif event.keysym == '5':
+        play_line_desc(5)
+    elif event.keysym == '6':
+        play_line_desc(6)
+    elif event.keysym == '7':
+        play_line_desc(7)
+    elif event.keysym == '8':
+        play_line_desc(8)
+    elif event.keysym == 'h':
+        play_tutorial()
+    elif event.keysym == 'r':
+        replay()
+    elif event.keysym == 'u':
+        upload()
+
+
+def place_line_desc_buttons(number_of_lines):
+    global line_1_button
+    global line_2_button
+    global line_3_button
+    global line_4_button
+    global line_5_button
+    global line_6_button
+    global line_7_button
+    global line_8_button
+    if number_of_lines == 8:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+        line_6_button.place(x=540, y=640)
+        line_6_button["state"] = "normal"
+        line_7_button.place(x=610, y=640)
+        line_7_button["state"] = "normal"
+        line_8_button.place(x=680, y=640)
+        line_8_button["state"] = "normal"
+    elif number_of_lines == 7:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+        line_6_button.place(x=540, y=640)
+        line_6_button["state"] = "normal"
+        line_7_button.place(x=610, y=640)
+        line_7_button["state"] = "normal"
+    elif number_of_lines == 6:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+        line_6_button.place(x=540, y=640)
+        line_6_button["state"] = "normal"
+    elif number_of_lines == 5:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+        line_5_button.place(x=470, y=640)
+        line_5_button["state"] = "normal"
+    elif number_of_lines == 4:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+        line_4_button.place(x=400, y=640)
+        line_4_button["state"] = "normal"
+    elif number_of_lines == 3:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+        line_3_button.place(x=330, y=640)
+        line_3_button["state"] = "normal"
+    elif number_of_lines == 2:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+        line_2_button.place(x=260, y=640)
+        line_2_button["state"] = "normal"
+    elif number_of_lines == 1:
+        line_1_button.place(x=190, y=640)
+        line_1_button["state"] = "normal"
+    else:
+        print(
+            " Error: bad args on place_line_desc_buttons(), must be integer between 1 and 8")
+
+
+def remove_line_desc_buttons(number_of_lines):
+    global line_1_button
+    global line_2_button
+    global line_3_button
+    global line_4_button
+    global line_5_button
+    global line_6_button
+    global line_7_button
+    global line_8_button
+    if number_of_lines == 8:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+        line_6_button.place_forget()
+        line_6_button["state"] = "disabled"
+        line_7_button.place_forget()
+        line_7_button["state"] = "disabled"
+        line_8_button.place_forget()
+        line_8_button["state"] = "disabled"
+    elif number_of_lines == 7:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+        line_6_button.place_forget()
+        line_6_button["state"] = "disabled"
+        line_7_button.place_forget()
+        line_7_button["state"] = "disabled"
+    elif number_of_lines == 6:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+        line_6_button.place_forget()
+        line_6_button["state"] = "disabled"
+    elif number_of_lines == 5:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+        line_5_button.place_forget()
+        line_5_button["state"] = "disabled"
+    elif number_of_lines == 4:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+        line_4_button.place_forget()
+        line_4_button["state"] = "disabled"
+    elif number_of_lines == 3:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+        line_3_button.place_forget()
+        line_3_button["state"] = "disabled"
+    elif number_of_lines == 2:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+        line_2_button.place_forget()
+        line_2_button["state"] = "disabled"
+    elif number_of_lines == 1:
+        line_1_button.place_forget()
+        line_1_button["state"] = "disabled"
+    else:
+        print(" Error: bad args on remove_line_desc_buttons() line buttons, must be integer between 1 and 8")
+
+
+def exitAGR():
+
+    GUI.destroy()
+
+## Begin functions outside of GUI ##
+
+
 def getTrendlines(points, y_max):
     # Correct answer
     # dict({1: [10, 7, -9], 2: [5, 1, -4]})
@@ -301,7 +867,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         else:
             x_values[ycoords[i][1]] += 1
 
-    # sorts the dicctionary based on the number of times a pixel appears at one y coordinate
+    # sorts the dictionary based on the number of times a pixel appears at one y coordinate
     sorted_ydict = OrderedDict(
         sorted(x_values.items(), key=itemgetter(1), reverse=True))
 
@@ -314,8 +880,8 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
 
     print("origin: ", origin)  # , 'aaaaa')
 
-    # if the longest line is bigger than half the width of the page it is the x-axis
-    if longest_yline_size > 1*cropped_x_pixels_width:
+# if the longest line is bigger than half the width of the page it is the x-axis
+    if longest_yline_size > 0.5*cropped_x_pixels_width:
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
@@ -327,9 +893,10 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The x-axis is ", longest_yline_size, " pixels long")
         x_axis_exists = True
 
-    if longest_xline_size > 1*cropped_y_pixels_height:
+    if longest_xline_size > 0.5*cropped_y_pixels_height:
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
+        
     else:
         click_img_y_axis(cropped_img)
         print(y_axis_pos)
@@ -338,43 +905,40 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
         y_axis_exists = True
-        print("There is no y-axis")
+      
 
     # makes a text file with all the y and x coordinates of the pixels under the threshold
     # with open('listfile.txt', 'w') as filehandle:
     #     for listitem in ylist:
     #         filehandle.write('%s\n' % listitem)
     # print("ffff", x_axis_exists)
-    return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists
+    return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin
 
 
 def click_img_x_axis(cropped_img):
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', get_x_axis)
     cv2.imshow('image', cropped_img)
+    #cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-        
-    
+
+
 def click_img_y_axis(cropped_img):
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', get_y_axis)
     cv2.imshow('image', cropped_img)
+    #cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    
-    
-def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yline_size, longest_xline_size):
+
+
+def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size):
     cropped_y_pixels_height = cropped_img.shape[0]
     cropped_x_pixels_width = cropped_img.shape[1]
 
-    if x_axis_exists == True:
-        x_axis_img = cropped_img[y_pixel_line -
-                                 0: cropped_y_pixels_height, 0: cropped_x_pixels_width]
-    else:
-        x_axis_img = cropped_img[round(cropped_y_pixels_height*0.82): round(
-            cropped_y_pixels_height*0.8)+40, 0: cropped_x_pixels_width]
-        print("The x-axis will be derived from the lowest y-axis value position")
+    x_axis_img = cropped_img[y_pixel_line +
+                             5: cropped_y_pixels_height, 0: cropped_x_pixels_width]
 
     # gets data from image
     d2 = pytesseract.image_to_data(x_axis_img, output_type=Output.DICT)
@@ -382,11 +946,10 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
     top = d2['top']
     left = d2['left']
     width = d2['width']
-
-
-    # print(d2)
+    cv2.imshow('image', x_axis_img)
+    cv2.waitKey(0)
+    print(d2)
     # the most common value in the top list should be the number of pixels from the bounding box to x-axis values
-    
 
     # list that holds the x axis values
     x_axis_values = []
@@ -497,7 +1060,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         x_axis_points = x_axis_value_medians[0]
         x_axis_value_datapoints.append(x_axis_points)
 
-    # for each line the coordinates and the colors at those coordinates are saved in new_datapoints and new_datapoints_colors
+   # for each line the coordinates and the colors at those coordinates are saved in new_datapoints and new_datapoints_colors
     for i in range(len(x_axis_value_medians)):
         x_axis_points = x_axis_value_medians[i]
         res, col, top_of_graph, fin_col = get_line_positions(
@@ -505,7 +1068,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         new_datapoints.append(res)
         new_datapoints_colors.append(col)
         final_colors.append(fin_col)
-    
+
     # num_lines is found by getting the most common length of the sublists in new_datapoints
     # new_datapoints is a list made up of sublists containing the coordinates of a color pixel for each x-axis value
     # eg [[[73, 151], [73, 191]], [[103, 159], [103, 202]], [[133, 145], [133, 156]]] this list has two lines and
@@ -515,8 +1078,8 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         for j in range(len(new_datapoints[i])):
             most_common_list.append(len(new_datapoints[i]))
     most_common = max(set(most_common_list), key=most_common_list.count)
-    num_lines = most_common    
-    
+    num_lines = most_common
+
     # colors are being stored in this dict. If the colors at the first x-axis value are not equal to the actual number
     # of lines, eg if a datapoint is covered by another, check several lines
     line_colors_dict = {}
@@ -532,8 +1095,8 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
             line_colors_dict[line] = new_datapoints_colors[2][i]
             line += 1
     print('A', line_colors_dict)
-    
-    # if there are less values in the new_datapoints list than there are lines, append "None" to the list to show the 
+
+    # if there are less values in the new_datapoints list than there are lines, append "None" to the list to show the
     # system could not get any data
     for i in range(len(new_datapoints)):
         if len(new_datapoints[i]) < num_lines:
@@ -542,34 +1105,31 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
                 new_datapoints[i].append([None, None])
                 final_colors[i].append([[None, None], [None, None, None]])
                 new_datapoints_colors[i].append([None, None, None])
-                
+
     print('s', num_lines, "\n")
     print('f', new_datapoints_colors[0])
     '''
     for i in range(len(final_colors)):
-
         print('new', final_colors[i], "\n")
     '''
     print('most', new_datapoints)
-    
 
-    buffer = 50    
+    buffer = 50
     correct_final_colors = [[] for k in range(num_lines)]
     # iterate over the number of x-axis values
     for i in range(len(final_colors)):
-        
-        
 
         # iterate over the number of points on the graph per x-axis value
         for j in range(num_lines):
-            
+
             first_val = list(line_colors_dict.values())[j]
             print('lll', first_val, j)
             print('asdf', final_colors[i][j][1], "\n")
             if None in final_colors[i][j][1]:
-                correct_final_colors[j].append([[None, None], [None, None, None]])
+                correct_final_colors[j].append(
+                    [[None, None], [None, None, None]])
                 print('fd', correct_final_colors[j], "\n")
-                
+
             else:
                 color_index = 0
                 # iterate over each datapoint and corresponding color to see if the color matches one in line_colors_dict
@@ -580,28 +1140,27 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
                     else:
                         # if the colors match a color in the line_colors_dict then append them to their own sublist
                         if int(final_colors[i][k][1][0]) in range(int(first_val[0]-buffer), int(first_val[0]+buffer)) \
-                        and int(final_colors[i][k][1][1]) in range(int(first_val[1]-buffer), int(first_val[1]+buffer)) \
-                        and int(final_colors[i][k][1][2]) in range(int(first_val[2]-buffer), int(first_val[2]+buffer)):
+                                and int(final_colors[i][k][1][1]) in range(int(first_val[1]-buffer), int(first_val[1]+buffer)) \
+                                and int(final_colors[i][k][1][2]) in range(int(first_val[2]-buffer), int(first_val[2]+buffer)):
                             correct_final_colors[j].append(final_colors[i][k])
                             print('kj', correct_final_colors[j], "\n")
                             color_index += 1
                 if color_index == 0:
-                    
-                    correct_final_colors[j].append([[None, None], [None, None, None]])
-                
-                            
-    
+
+                    correct_final_colors[j].append(
+                        [[None, None], [None, None, None]])
+
     for i in range(len(correct_final_colors)):
         print(i)
         print('ppp', correct_final_colors[i], "\n")
-    
+
     print('ggggggggg', len(correct_final_colors[0]))
     # a list with sublists. number of sublists is determined by the number of lines
     line_positions = [[] for k in range(num_lines)]
     yAxis_values = []
     yAxis_values = calculate_yAxis_values(
         cropped_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph)
-    
+
     print('yyy', yAxis_values)
     # each sublist in line_positions represents each line's y coordinates and a number from 1 to the number of x-axis values
     # eg [[(1, 213), (2, 222)], (1,124), (2, 211)] there are two lines and two x-axis values. the value on the right in
@@ -612,7 +1171,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
         for j in range(num_lines):
             line_positions[j].append(
                 (val, yAxis_values[j][i]))
-            
+
     # line_data gets keys based on the number of lines and the values are line_positions values
     # min and max points are dictionaries containing the min and max value for each line
     for i in range(num_lines):
@@ -648,21 +1207,18 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, longest_yl
                         [i], d2['width'][i], d2['height'][i])
         cv2.rectangle(x_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    cv2.imshow('image', x_axis_img)
-    cv2.waitKey(0)
+    # cv2.imshow('image', x_axis_img)
+    # cv2.waitKey(0)
 
-    return line_data, x_axis_values, num_lines
+    return line_data, x_axis_values, num_lines, x_axis_title
 
 
 def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
     cropped_y_pixels_height = cropped_img.shape[0]
     cropped_x_pixels_width = cropped_img.shape[1]
 
-    if y_axis_exists == True:
-        y_axis_img = cropped_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
-    else:
-        y_axis_img = cropped_img[0: y_pixel_line + 10, 0: x_pixel_line + 10]
-        print("The y-axis will be derived from the leftmost x-axis datapoint")
+    y_axis_img = cropped_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
+
 
     # gets data from image
     d2 = pytesseract.image_to_data(y_axis_img, output_type=Output.DICT)
@@ -726,11 +1282,11 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
                         [i], d2['width'][i], d2['height'][i])
         cv2.rectangle(y_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    #cv2.imshow('image', y_axis_img)
+    # cv2.imshow('image', y_axis_img)
     # cv2.waitKey(0)
     biggest_max = y_axis_values[0]
 
-    return y_axis_values, biggest_max
+    return y_axis_values, biggest_max, y_axis_title
 
 
 def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points):
@@ -761,7 +1317,7 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
             color_positions.append([x_axis_points, i])
             # cropped_img[151, 73] = (0, 0, 0)
             colors.append(list(pix))
-    
+
     # finds the consecutive y pixel values and groups them into lists
     for i in range(len(color_positions)):
         if color_positions[i-1][1] + 1 == color_positions[i][1]:
@@ -770,7 +1326,6 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
         else:
             datapoints.append([color_positions[i][1]])
 
-    
     # add colors to the datapoints_colors
     for i in range(len(colors)):
         if colors[i-1] == colors[i]:
@@ -783,14 +1338,13 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
     for i in range(len(datapoints)):
         if len(datapoints[i]) > 2:
             new_datapoints.append(datapoints[i])
-    
 
     # finds the median y pixel value for each datapoint and replaces the consecutive value lists with the median
     for i in range(len(new_datapoints)):
         median = math.ceil(statistics.median(new_datapoints[i]))
         new_datapoints.remove(new_datapoints[i])
         new_datapoints.insert(i, [x_axis_points, median])
-        
+
     # add to a new list the colors that appear at the specified datapoints
     for i in range(len(new_datapoints)):
         # colors at the positions where datapoints exist
@@ -799,12 +1353,12 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
             continue
         else:
             new_datapoints_colors.append(d)
-    
+
     for i in range(len(new_datapoints)):
-        
+
         final_colors.append(
             [new_datapoints[i], new_datapoints_colors[i]])
-            
+
     return new_datapoints, new_datapoints_colors, top_of_graph, final_colors
 
 
@@ -817,7 +1371,7 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
     datapoints = [[] for k in range(num_lines)]
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
     pixels_divider = distance_from_top_to_x_axis / float(y_axis_values[0])
-    
+
     '''
     for i in range(len(correct_final_colors)):
         print('ya', correct_final_colors[i], "\n")
@@ -835,126 +1389,26 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
                 datapoints[j].append(yAxis_values)
     return datapoints
 
-def get_x_axis(event,x,y,flags,param):
+
+def get_x_axis(event, x, y, flags, param):
     global x_axis_pos
     if event == cv2.EVENT_LBUTTONDBLCLK:
         x_axis_pos.append((x, y))
-    
-def get_y_axis(event,x,y,flags,param):
+        
+
+
+def get_y_axis(event, x, y, flags, param):
     global y_axis_pos
     if event == cv2.EVENT_LBUTTONDBLCLK:
         y_axis_pos.append((x, y))
-if __name__ == '__main__':
-    file_path = r'C:\Users\Josh Hilger\OneDrive\Work and School Shit\450 Project\AudibleGraphReader\images\image1.png'
-    '''
-    if len(argv) == 2:
-        file_path = sys.argv[1]
-    else:
-        print(" Error: Argument Error")
-        quit()
-    '''
-    ## Check file acceptability ##
 
-    # file path must not be greater than 247 characters
-    if (len(file_path) > 247):
-        print(" Error: File path is too long")
-        quit()
 
-    file_name, file_extension = os.path.splitext(file_path)
-    # print("file_path: ", file_path) # file_path:  C:\Users\Think\Desktop\CSC 450\myCode\CompiledProg\image4.gif
-    # print("filename: ", file_name) # filename:  C:\Users\Think\Desktop\CSC 450\myCode\CompiledProg\image4
-    # print("fil_ext: ", file_extension) # fil_ext:  .gif
-    og_file_name = path_leaf(file_path)
-    #print("ogFileName: ", og_file_name)
 
-    # iterate over the characters in regex and check if they are in the file path
-    regex = '<>:"|?*'
-    for char in regex:
-        if char in og_file_name:
-            print(" Error: File path must not contain ",
-                  str(char), " or <>\":|?*")
-            quit()
+def get_graph_title(cropped_img):
 
-    if os.path.getsize(file_path) < 1000000:
-        pass
-    else:
-        print(" Error: File is too large, must be less than 1 MB")
-        quit()
-
-    if (check_fileType(file_path)):
-        print(" info: File is of an accepted type")
-    else:
-        print(" Error: File is not of an accepted type")
-        quit()
-
-    ##- Check file acceptability -##
-
-    ## Create AGR directories ##
-
-    now = datetime.now()
-    timestamp = str(round(datetime.timestamp(now)))
-
-    new_file_name = og_file_name + "." + timestamp
-    # print("newfilename: ", new_file_name)
-
-    desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
-    path = desktop + "/AGR/Graphs/" + new_file_name + "/"
-
-    try:
-        os.makedirs(path)  # Create all necessary directories
-    except OSError:
-        print(" Error: Creation of the directory %s failed" % path)
-    else:
-        print(" info: Successfully created the directory %s" % path)
-
-    shutil.copy(file_path, path)
-
-    # change wd to path of desktop
-    os.chdir(path)
-
-    # check if img is png
-    if og_file_name[-4:] in {'.png'}:
-        img = Image.open(og_file_name)
-        img = cv2.imread(og_file_name)  # 'eimg.png')
-    else:
-        name_no_ext = og_file_name.split('.')
-        # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
-        img = Image.open(og_file_name).save(path + name_no_ext[0] + '.png')
-        img = cv2.imread(name_no_ext[0] + '.png')  # 'eimg.png')
-
-    # img = ImageEnhance.Sharpness(img.convert('RGB'))
-    # img = img.enhance(5.0).save('eimg.png')
-
-    img_size = img.shape
-    print(img_size)
-    y_pixels_height = img.shape[0]
-    x_pixels_width = img.shape[1]
-    cropped_img = img[0: y_pixels_height-0, 0: x_pixels_width-0]
-    cropped_y_pixels_height = img.shape[0]
-    cropped_x_pixels_width = img.shape[1]
-    print(cropped_img.shape)
-    x_axis_exists = True
-    y_axis_exists = True
-
-    cropped_x_axis = cropped_img[round(
-        cropped_y_pixels_height*0.7): cropped_y_pixels_height, 0: cropped_x_pixels_width]
-
-    cropped_y_axis = cropped_img[0: cropped_y_pixels_height, 0: round(
-        cropped_x_pixels_width*0.3)]
-
-    xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
-
-    y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists = store_coords(
-        cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
-
-    y_axis_values, biggest_max = get_ydata(
-        cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
-
-    line_data, x_axis_values, num_lines = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
-                                                    x_axis_exists, longest_yline_size, longest_xline_size)
-
-    # main title code
-    # crop the image to top 1/3
+    cropped_y_pixels_height = cropped_img.shape[0]
+    cropped_x_pixels_width = cropped_img.shape[1]
+    
     cropped_img = cropped_img[0: round(
         cropped_y_pixels_height*0.3), 0: cropped_x_pixels_width]
 
@@ -983,51 +1437,118 @@ if __name__ == '__main__':
     # strips the '' from the array of title chars.
     JoinedGraphTitle = ''.join(GraphTitle)
     # print(JoinedGraphTitle)
-    # main title code END
+    return JoinedGraphTitle
 
-    # ASSIGN VARIABLES
 
-    X_AXIS_MIN = 0
+## End oF Functions ##
 
-    GRAPH_TITLE = str(JoinedGraphTitle)
 
-    # X_AXIS_TITLE = "COMPLETE ME"
-    # Y_AXIS_TITLE = "COMPLETE ME"
-    # jX_AXIS_VALUES = "COMPLETE ME"
-    # jY_AXIS_VALUES = "COMPLETE ME"
+# If you have a large number of widgets, like it looks like you will for your
+# game you can specify the attributes for all widgets simply like this.
+GUI.option_add("*Button.Background", "light blue")
+GUI.option_add("*Button.Foreground", "black")
+GUI.option_add("*Button.Font", ("Impact", 10))
 
-    # pass dict of points
-    # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
-    #              (1, 200), (2, 429), (3, 400), (4, 300), (5, 500)], 3: [(1, 0), (2, 100), (3, 250), (4, 450), (5, 440)]})
-    trend_line_dict, slopes_strings_dict, intersections_dict = getIntersections(
-        line_data, x_axis_values, num_lines, biggest_max)
+GUI.title('Audible Graph Reader')
+# You can set the geometry attribute to change the root windows size
+GUI.geometry("900x700")  # You want the size of the app to be 500x500
+GUI.resizable(0, 0)  # Don't allow resizing in the x or y direction
 
-    x = {
-        "main_title": GRAPH_TITLE
-    }
+background = tk.Frame(master=GUI, bg='white')
+# Don't allow the widgets inside to determine the frame's width / height
+background.pack_propagate(0)
+# Expand the frame to fill the root window
+background.pack(fill=tk.BOTH, expand=1)
 
-    try:
-        f = open(path + og_file_name +
-                 ".json", 'w')  # Create .json file
-    except:
-        print(" Error: JSON file creation failed")
-    else:
-        print(" info: Successfully created .json")
+listbox.place(x=180, y=80)
 
-    try:
-        jsonData = json.dumps(x,  indent=2)  # with newline
-        # jsonData = json.dumps(x)   # without newline
-        # print(jsonData)
-        # print("successfully dumpt json")
-    except:
-        pass
+# Changed variables so you don't have these set to None from .pack()
+welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
+                         bg='white', fg='black', font=("Impact", 20))
+welcome_label.pack()
 
-    try:
-        f.write(jsonData)
-        print(" info: Successfully wrote json data")
-    except:
-        print(" Error: Unable to write json")
+upload_button = tk.Button(master=background, text='Upload Graph',
+                          width=19, command=upload)
 
-    f.close()
+play_entire_graph_desc = tk.Button(master=background, text='Explain Graph',
+                                   width=19, command=read_text_file)
 
-    print(" info: Program Terminating")
+tutorial_button = tk.Button(master=background, text='Tutorial',
+                            width=19, command=play_tutorial)
+
+load_previous_graph = tk.Button(master=background, text='Load Previous Graph',
+                                width=19, command=load_previous_graph)
+
+pause_play_button = tk.Button(master=background, text='Pause / Play',
+                              width=19, command=play_pause)
+
+replay_button = tk.Button(
+    master=background, text='Replay', width=19, command=replay)
+
+exit_button = tk.Button(master=background, text='Exit AGR',
+                        width=19, command=exitAGR)
+
+line_1_button = tk.Button(master=background, text='Line 1',
+                          width=8, command=lambda: play_line_desc(1))
+
+line_2_button = tk.Button(master=background, text='Line 2',
+                          width=8, command=lambda: play_line_desc(2))
+
+line_3_button = tk.Button(master=background, text='Line 3',
+                          width=8, command=lambda: play_line_desc(3))
+
+line_4_button = tk.Button(master=background, text='Line 4',
+                          width=8, command=lambda: play_line_desc(4))
+
+line_5_button = tk.Button(master=background, text='Line 5',
+                          width=8, command=lambda: play_line_desc(5))
+
+line_6_button = tk.Button(master=background, text='Line 6',
+                          width=8, command=lambda: play_line_desc(6))
+
+line_7_button = tk.Button(master=background, text='Line 7',
+                          width=8, command=lambda: play_line_desc(7))
+
+line_8_button = tk.Button(master=background, text='Line 8',
+                          width=8, command=lambda: play_line_desc(8))
+
+
+upload_button.place(x=30, y=120)
+play_entire_graph_desc.place(x=30, y=180)
+tutorial_button.place(x=30, y=240)
+load_previous_graph.place(x=30, y=300)
+pause_play_button.place(x=30, y=360)
+replay_button.place(x=30, y=420)
+exit_button.place(x=30, y=640)
+
+replay_button["state"] = "disabled"
+load_previous_graph["state"] = "disabled"
+pause_play_button["state"] = "disabled"
+
+# TODO
+# Verify file path
+# Add hotkey for entire graph description
+# Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
+# Add functionality to grab proper files (.wav .json ...) from folder on old graph load
+#
+
+# Once analyzed
+remove_line_desc_buttons(8)
+
+# And place buttons using num_lines
+# place_line_desc_buttons(num_lines)
+
+
+GUI.bind("<Key>", key)  # calls key (function above) on Keyboard input
+GUI.resizable(False, False)
+
+GUI.mainloop()
+
+
+# stop stream
+stream.stop_stream()
+stream.close()
+wf.close()
+
+# close PyAudio
+p.terminate()
