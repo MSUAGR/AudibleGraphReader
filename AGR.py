@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 # utf-8
 
-
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.11.2020
-
+# 4.12.2020
 
 # User must install pytesseract version 5
 # blank.wav must exist in same dir as this file
 # USE: ./AGR.py
-# On execution AGR/Graphs Folder is created on Desktop
-#       timestamped folder containing json, image and list files are created
-
 
 import tkinter as tk
 from tkinter import *
@@ -184,6 +179,7 @@ def upload():
         J_X_AXIS_VALUES = x_axis_values
         J_Y_AXIS_VALUES = y_axis_values
         J_ORIGIN = str(origin)
+        J_NUM_LINES = num_lines
 
         # SET CORRECT VALS HERE
         J_FOUND_COLORS = "toBeDetermined"
@@ -272,6 +268,8 @@ def upload():
     # if success change enable load prev graph button
     if load_previous_graph["state"] == "disabled":
         load_previous_graph["state"] = "normal"
+
+    place_line_desc_buttons(num_lines)
 
 
 def load_previous_graph_fn():
