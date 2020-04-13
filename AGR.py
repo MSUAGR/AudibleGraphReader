@@ -45,8 +45,8 @@ import math
 from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe' # Josh/Alex
-#pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
+# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 
 # Global
 x_axis_pos = []  # image1 (98, 395), (543, 395)
@@ -269,7 +269,7 @@ def upload():
     print(file_path + " has been opened in the preview window")
 
 
-def load_previous_graph():
+def load_previous_graph_fn():
     # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
     AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
@@ -287,7 +287,7 @@ def load_previous_graph():
     print(file_path + " has been opened in the preview window")
 
 
-def read_text_file():
+def play_entire_graph_desc_fn():
     print("ReadingTextFile?")
 
 
@@ -408,6 +408,14 @@ def key(event):
         replay()
     elif event.keysym == 'u':
         upload()
+    elif event.keycode == 27:
+        ok = messagebox.askokcancel(message="Are you sure you want to exit?")
+        if ok:
+            exitAGR()
+    elif event.keysym == 'i':
+        load_previous_graph_fn()
+    elif event.keycode == 192:
+        play_entire_graph_desc_fn()
 
 
 def place_line_desc_buttons(number_of_lines):
@@ -886,7 +894,8 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
-        messagebox.showinfo(title = "Get x-axis", message = "Double click at the origin and the end of the x-axis")
+        messagebox.showinfo(
+            title="Get x-axis", message="Double click at the origin and the end of the x-axis")
         click_img_x_axis(cropped_img)
         print(x_axis_pos)
         y_pixel_line = x_axis_pos[0][1]
@@ -898,9 +907,10 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     if longest_xline_size > 0.5*cropped_y_pixels_height:
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
-        
+
     else:
-        messagebox.showinfo(title = "Get y-axis", message = "Double click at the origin and the end of the y-axis")
+        messagebox.showinfo(
+            title="Get y-axis", message="Double click at the origin and the end of the y-axis")
         click_img_y_axis(cropped_img)
         print(y_axis_pos)
         x_pixel_line = y_axis_pos[0][0]
@@ -908,7 +918,6 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
         y_axis_exists = True
-      
 
     # makes a text file with all the y and x coordinates of the pixels under the threshold
     # with open('listfile.txt', 'w') as filehandle:
@@ -1224,7 +1233,6 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
 
     y_axis_img = cropped_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
 
-
     # gets data from image
     d2 = pytesseract.image_to_data(y_axis_img, output_type=Output.DICT)
     text = d2['text']
@@ -1401,7 +1409,6 @@ def get_x_axis(event, x, y, flags, param):
         x_axis_pos.append((x, y))
     if len(x_axis_pos) == 2:
         cv2.destroyAllWindows()
-        
 
 
 def get_y_axis(event, x, y, flags, param):
@@ -1412,12 +1419,11 @@ def get_y_axis(event, x, y, flags, param):
         cv2.destroyAllWindows()
 
 
-
 def get_graph_title(cropped_img):
 
     cropped_y_pixels_height = cropped_img.shape[0]
     cropped_x_pixels_width = cropped_img.shape[1]
-    
+
     cropped_img = cropped_img[0: round(
         cropped_y_pixels_height*0.3), 0: cropped_x_pixels_width]
 
@@ -1480,13 +1486,13 @@ upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
 
 play_entire_graph_desc = tk.Button(master=background, text='Explain Graph',
-                                   width=19, command=read_text_file)
+                                   width=19, command=play_entire_graph_desc_fn)
 
 tutorial_button = tk.Button(master=background, text='Tutorial',
                             width=19, command=play_tutorial)
 
 load_previous_graph = tk.Button(master=background, text='Load Previous Graph',
-                                width=19, command=load_previous_graph)
+                                width=19, command=load_previous_graph_fn)
 
 pause_play_button = tk.Button(master=background, text='Pause / Play',
                               width=19, command=play_pause)
