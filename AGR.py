@@ -45,8 +45,8 @@ import math
 from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
-# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
+pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 
 # Global
 x_axis_pos = []  # image1 (98, 395), (543, 395)
@@ -85,6 +85,7 @@ stream.stop_stream()
 
 def upload():
     global listbox
+    global load_previous_graph
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
                                            ("Image Files", ".png .jpg .gif .img")])
     listbox.insert(END, file_path)
@@ -268,6 +269,10 @@ def upload():
 
     print(file_path + " has been opened in the preview window")
 
+    # if success change enable load prev graph button
+    if load_previous_graph["state"] == "disabled":
+        load_previous_graph["state"] = "normal"
+
 
 def load_previous_graph_fn():
     # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
@@ -413,7 +418,11 @@ def key(event):
         if ok:
             exitAGR()
     elif event.keysym == 'i':
-        load_previous_graph_fn()
+        if load_previous_graph["state"] == "normal":
+            load_previous_graph_fn()
+        else:
+            print(" Error: Open prev graph not enabled")
+
     elif event.keycode == 192:
         play_entire_graph_desc_fn()
 
@@ -683,8 +692,6 @@ def getTrendlines(points, y_max):
     print("relative_slopes: ", relative_slopes)
     return slopes, relative_slopes
 
-# Need to pass in the dictionary of (x,y) values as points
-
 
 def getIntersections(points, x_axis_values, num_lines, biggest_max):
     intersections = dict()  # holds the intersections
@@ -889,7 +896,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
 
     print("origin: ", origin)  # , 'aaaaa')
 
-# if the longest line is bigger than half the width of the page it is the x-axis
+    # if the longest line is bigger than half the width of the page it is the x-axis
     if longest_yline_size > 0.5*cropped_x_pixels_width:
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
@@ -1537,15 +1544,24 @@ replay_button.place(x=30, y=420)
 exit_button.place(x=30, y=640)
 
 replay_button["state"] = "disabled"
-load_previous_graph["state"] = "disabled"
+
+if os.path.exists(os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))) == False:
+    load_previous_graph["state"] = "disabled"
+else:
+    load_previous_graph["state"] = "normal"
+
 pause_play_button["state"] = "disabled"
 
 # TODO
-# Verify file path
+# Verify file path on dialog close , prevent bad/ blank
 # Add hotkey for entire graph description
 # Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
 # Add functionality to grab proper files (.wav .json ...) from folder on old graph load
-#
+# .wav
+# adding slopes stuff @ alex
+# play entire line desc
+# play tut
+# enable buttons
 
 # Once analyzed
 remove_line_desc_buttons(8)
