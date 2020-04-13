@@ -199,6 +199,7 @@ def upload():
             "x_axis_values": J_X_AXIS_VALUES,  # LIST
             "y_axis_title": J_Y_AXIS_TITLE,  # STRING
             "y_axis_values": J_Y_AXIS_VALUES,  # LIST
+            "num_lines": J_NUM_LINES,
             "found_colors": J_FOUND_COLORS,  # LIST OF RGB
             "data_points": J_DATA_POINTS,  # LIST OF TUPLES
             "origin": J_ORIGIN,  # TUPLE
@@ -1542,6 +1543,7 @@ replay_button.place(x=30, y=420)
 exit_button.place(x=30, y=640)
 
 replay_button["state"] = "disabled"
+play_entire_graph_desc["state"] = "disabled"
 
 if os.path.exists(os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))) == False:
     load_previous_graph["state"] = "disabled"
@@ -1552,14 +1554,16 @@ pause_play_button["state"] = "disabled"
 
 # TODO
 # Verify file path on dialog close , prevent bad/ blank
-# Add hotkey for entire graph description
 # Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
 # Add functionality to grab proper files (.wav .json ...) from folder on old graph load
 # .wav
 # adding slopes stuff @ alex
 # play entire line desc
 # play tut
-# enable buttons
+# enable buttons on load wav:
+#   pause_play_button
+#   replay_button
+#   play_entire_graph_desc
 
 # Once analyzed
 remove_line_desc_buttons(8)
