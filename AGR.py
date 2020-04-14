@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.12.2020
+# 4.13.2020
 
 # User must install pytesseract version 5
 # blank.wav must exist in same dir as this file
@@ -19,7 +19,7 @@ import pyaudio
 import wave
 import time
 import os
-#
+from gtts import gTTS
 import cv2
 import sys
 #from sys import argv
@@ -39,9 +39,10 @@ import statistics
 import math
 from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
+import subprocess
 
-# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
+# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 
 # Global
 x_axis_pos = []  # image1 (98, 395), (543, 395)
@@ -81,10 +82,12 @@ stream.stop_stream()
 def upload():
     global listbox
     global load_previous_graph
+    global sound_file
+    print('yes')
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
                                            ("Image Files", ".png .jpg .gif .img")])
     listbox.insert(END, file_path)
-
+    
     if (len(file_path) > 247):
         messagebox.showerror(
             title="AGR:Error", message="File path is too long.")
@@ -171,15 +174,22 @@ def upload():
                                                                       x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
 
         # ASSIGN VARIABLES
+        for i in range(len(x_axis_title)):
+            xAxis_title = ''
+            xAxis_title += x_axis_title[i] + ' '
 
+        for i in range(len(y_axis_title)):
+            yAxis_title = ''
+            yAxis_title += y_axis_title[i] + ' '
+            
         X_AXIS_MIN = 0
         J_GRAPH_TITLE = str(get_graph_title(cropped_img))
-        J_X_AXIS_TITLE = x_axis_title
-        J_Y_AXIS_TITLE = y_axis_title
+        J_X_AXIS_TITLE = xAxis_title
+        J_Y_AXIS_TITLE = yAxis_title
         J_X_AXIS_VALUES = x_axis_values
         J_Y_AXIS_VALUES = y_axis_values
         J_ORIGIN = str(origin)
-        J_NUM_LINES = num_lines
+        J_NUM_LINES = str(num_lines)
 
         # SET CORRECT VALS HERE
         J_FOUND_COLORS = "toBeDetermined"
@@ -189,7 +199,7 @@ def upload():
         # pass dict of points
         # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
         #              (1, 200), (2, 429), (3, 400), (4, 300), (5, 500)], 3: [(1, 0), (2, 100), (3, 250), (4, 450), (5, 440)]})
-        trend_line_dict, slopes_strings_dict, intersections_dict = getIntersections(
+        trend_line_dict, slope_strings, intersections_dict = getIntersections(
             line_data, x_axis_values, num_lines, biggest_max)
 
         x = {
@@ -231,8 +241,78 @@ def upload():
 
         f.close()
 
-        audText = "Graph " + timestamp + " \n"
-        audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
+        audText = ''
+        line_1_text = ''
+        line_2_text = ''
+        line_3_text = ''
+        line_4_text = ''
+        line_5_text = ''
+        line_6_text = ''
+        line_7_text = ''
+        line_8_text = ''
+
+        if J_GRAPH_TITLE == None:
+            audText += "The graph title could not be found. \n"
+        else:    
+            audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
+
+        if J_X_AXIS_TITLE == None:
+            audText += "The x-axis title could not be found. \n"
+        else:    
+            audText += "The x-axis is titled "
+            for i in range(len(x_axis_title)):
+                audText += x_axis_title[i] + ' '
+            audText += ". \n"
+
+        if J_X_AXIS_VALUES == None:
+            audText += "The x-axis values could not be found. \n"
+        else:    
+            audText += "The x-axis values are "
+            for i in range(len(x_axis_values)):
+                audText += x_axis_values[i] + ', '
+            audText += ". \n"
+
+        if J_Y_AXIS_TITLE == None:
+            audText += "The y-axis title could not be found. \n"
+        else:    
+            audText += "The y-axis is titled "
+            for i in range(len(y_axis_title)):
+                audText += y_axis_title[i] + ' '
+            audText += ". \n"
+        
+        if J_Y_AXIS_VALUES == None:
+            audText += "The y-axis values could not be found. \n"
+        else:    
+            audText += "The y-axis values are "
+            for i in range(len(y_axis_values)):
+                audText += y_axis_values[i] + ', '
+            audText += ". \n"
+
+        if J_NUM_LINES == None:
+            audText += "The number of lines on the graph could not be found. \n"
+        else:    
+            audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
+        
+        # TODO check if "stays the same" to change the text put in .txt file, do for if, elif, and else
+        # check for intersections
+        lines_vals = line_data.items()
+        for key, values in lines_vals:
+            for i in range(len(values) - 1):
+                if i == 0:
+                    #if slope_strings[key][i] == "stays the same":
+                    #else:vvvvvvv:
+                    lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and goes " \
+                    + slope_strings[key][i] + " to " + str(values[i + 1][1]) + ".\n"
+                elif i > 0 and i < len(values) - 2:
+                    lineString += "Line " + str(key) + " then goes " + slope_strings[key][i] + " to " + str(values[i + 1][1]) + ".\n"
+                else:
+                    lineString += "Finally, line " + str(key) + " goes " + slope_strings[key][i] + " to " + str(values[i + 1][1]) + ".\n"
+            # TODO create .wav file for each line
+            #tts = gTTS(lineString)
+            #tts.save(str(key) + '.mp3')
+                
+
+            audText += lineString  # adds line information to complete text file
 
         aud_text_file_name = new_file_name + '.txt'
 
@@ -255,6 +335,24 @@ def upload():
         except:
             print(" Error: Unable to create file")
 
+        gt = True
+        if gt:
+
+            tts = gTTS(audText)
+            tts.save('audTex.mp3')
+
+            print(path)
+            print(desktop)
+            print(os.getcwd())
+            src_mp3 = '"' + path + "audTex.mp3" + '"'
+            des_wav = ' "' + path + "everything.wav" + '"'
+            ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + '"'
+            my_command = ffmpeg_path + " -i " + src_mp3 + des_wav
+            print("command: " + my_command) 
+            proc = subprocess.Popen( 
+                my_command, shell=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+            time.sleep(1)
         img = Image.open(file_path)
         if img.size[0] > 690 or img.size[1] > 545:
             img = img.resize((690, 545), Image.ANTIALIAS)
@@ -263,6 +361,15 @@ def upload():
                          height=505, image=openImg)
         image.image = openImg
         image.place(x=160, y=120)
+        
+        if pause_play_button["state"] == "disabled":
+            pause_play_button["state"] = "normal"
+        if replay_button["state"] == "disabled":
+            replay_button["state"] = "normal"
+        if replay_button["state"] == "disabled":
+            replay_button["state"] = "normal"
+        
+        play_entire_graph_desc_fn(path)
 
     print(file_path + " has been opened in the preview window")
 
@@ -275,7 +382,7 @@ def upload():
 
 def load_previous_graph_fn():
     # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
-    AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
+    AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/")) 
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
             ("Image Files", ".png .jpg .gif .img")])
@@ -291,8 +398,46 @@ def load_previous_graph_fn():
     print(file_path + " has been opened in the preview window")
 
 
-def play_entire_graph_desc_fn():
-    print("ReadingTextFile?")
+def play_entire_graph_desc_fn(path):
+    global playing_bool
+    global stream
+    global p
+    global wf
+    global sound_file
+
+    if playing_bool or stream.is_active():
+        stream.stop_stream()
+
+    os.chdir(path)
+    sound_file = os.getcwd() + r'\everything.wav'
+    print("sound_file: "+sound_file)
+    sound_file = os.path.normpath(sound_file)
+    #sound_file = os.path.normcase(sound_file)
+    print("sound_file: "+sound_file)
+    sound_file2 = ""
+    for item in sound_file:
+        if item == '\\':
+            sound_file2 += r'\\'
+        else:
+            sound_file2 += item
+    print("sf2: " + sound_file2)
+
+    if os.path.isfile(sound_file2):
+        print("IsFile")
+    else:
+        print("noFile")
+
+    # wf = wave.open(
+    # 'C:\\Users\\Think\\Desktop\\AGR\\Graphs\\image4.gif.1586832607\\everything.wav', 'rb')
+    wf = wave.open(sound_file, 'rb')
+    print(sound_file, " loaded")
+
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    stream_callback=callback)
+    return stream
 
 
 def play_tutorial():
@@ -308,7 +453,6 @@ def play_line_desc(line_number):
 
     if playing_bool or stream.is_active():
         stream.stop_stream()
-
     sound_file = str(line_number) + ".wav"
     print(sound_file)
     wf = wave.open(sound_file, 'r')
@@ -371,6 +515,7 @@ def play_pause():  # playing_bool):
 def key(event):
     global line_1_button
 
+   
     # pretty print keys
     key_char = event.char
     key_symb = event.keysym
@@ -635,54 +780,61 @@ def getTrendlines(points, y_max):
             x2 = values[i + 1][0]
             y2 = values[i + 1][1]
             # print("x1: ", x1, "y1: ", y1, "x2: ", x2, "y2: ", y2)
-            slope = round((y2 - y1) / (x2 - x1), 2)
-            if slope > 0:
-                if slope/MAX_Y_VAL > 0.5:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("up sharply")
-                    else:
-                        relative_slopes[key] = ["up sharply"]
-                elif slope/MAX_Y_VAL > 0.3:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("up significantly")
-                    else:
-                        relative_slopes[key] = ["up significantly"]
-                elif slope/MAX_Y_VAL > 0.1:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("up moderately")
-                    else:
-                        relative_slopes[key] = ["up moderately"]
-                else:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("up slightly")
-                    else:
-                        relative_slopes[key] = ["up slightly"]
-            elif slope < 0:
-                if slope/MAX_Y_VAL < -0.5:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("down sharply")
-                    else:
-                        relative_slopes[key] = ["down sharply"]
-                elif slope/MAX_Y_VAL < -0.3:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("down significantly")
-                    else:
-                        relative_slopes[key] = ["down significantly"]
-                elif slope/MAX_Y_VAL < -0.1:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("down moderately")
-                    else:
-                        relative_slopes[key] = ["down moderately"]
-                else:
-                    if key in relative_slopes:
-                        relative_slopes[key].append("down slightly")
-                    else:
-                        relative_slopes[key] = ["down slightly"]
-            else:
+            if x1 == None or x2 == None or y1 == None or y2 == None:
+                slope = None
                 if key in relative_slopes:
-                    relative_slopes[key].append("stays the same")
+                    relative_slopes[key].append("None")
                 else:
-                    relative_slopes[key] = ["stays the same"]
+                    relative_slopes[key] = ["None"]
+            else:
+                slope = round((y2 - y1) / (x2 - x1), 2)
+                if slope > 0:
+                    if slope/MAX_Y_VAL > 0.5:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("up sharply")
+                        else:
+                            relative_slopes[key] = ["up sharply"]
+                    elif slope/MAX_Y_VAL > 0.3:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("up significantly")
+                        else:
+                            relative_slopes[key] = ["up significantly"]
+                    elif slope/MAX_Y_VAL > 0.1:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("up moderately")
+                        else:
+                            relative_slopes[key] = ["up moderately"]
+                    else:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("up slightly")
+                        else:
+                            relative_slopes[key] = ["up slightly"]
+                elif slope < 0:
+                    if slope/MAX_Y_VAL < -0.5:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("down sharply")
+                        else:
+                            relative_slopes[key] = ["down sharply"]
+                    elif slope/MAX_Y_VAL < -0.3:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("down significantly")
+                        else:
+                            relative_slopes[key] = ["down significantly"]
+                    elif slope/MAX_Y_VAL < -0.1:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("down moderately")
+                        else:
+                            relative_slopes[key] = ["down moderately"]
+                    else:
+                        if key in relative_slopes:
+                            relative_slopes[key].append("down slightly")
+                        else:
+                            relative_slopes[key] = ["down slightly"]
+                elif slope == 0:
+                    if key in relative_slopes:
+                        relative_slopes[key].append("stays the same")
+                    else:
+                        relative_slopes[key] = ["stays the same"]
             if key in slopes:
                 slopes[key].append(slope)
             else:
@@ -746,7 +898,10 @@ def getIntersections(points, x_axis_values, num_lines, biggest_max):
             m1 = slopes[j]
             x = x_y_vals[2 * j]
             y = x_y_vals[2 * j + 1]
-            b1 = y - (m1 * x)
+            if m1 == None or x == None or y == None:
+                b1 = None    
+            else:
+                b1 = y - (m1 * x)
 
             # order is [m, b, x, y]
             equations[j][0] = m1
@@ -770,18 +925,28 @@ def getIntersections(points, x_axis_values, num_lines, biggest_max):
                 b1 = equations[equation][1]
                 m2 = equations[eq][0]
                 b2 = equations[eq][1]
-                b3 = b2 - b1
-                m3 = m1 - m2
+                if m1 == None or m2 == None or b1 == None or b2 == None:
+                    m3 = None
+                    b3 = None                    
+                else:
+                    b3 = b2 - b1
+                    m3 = m1 - m2
+                
                 if m3 == 0:  # means the lines are parallel and will never intersect or are the same line
                     continue
-
-                x_i = b3/m3
-                if x_i > x_max or x_i < X_MIN:
-                    continue
-
-                y_i = round((m1 * x_i) + b1, 1)
-
-                x_i = round(x_i, 1)
+                
+                if b3 == None or m3 == None:
+                    x_i = None
+                    y_i = None
+                else:   
+                    x_i = b3/m3
+                    if x_i > x_max or x_i < X_MIN:
+                        continue
+                
+                
+                if x_i != None and y_i != None:
+                    y_i = round((m1 * x_i) + b1, 1)
+                    x_i = round(x_i, 1)
 
                 intersection_coord = (eq + 1, x_i, y_i)
 
@@ -966,9 +1131,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     top = d2['top']
     left = d2['left']
     width = d2['width']
-    cv2.imshow('image', x_axis_img)
-    cv2.waitKey(0)
-    print(d2)
     # the most common value in the top list should be the number of pixels from the bounding box to x-axis values
 
     # list that holds the x axis values
@@ -1126,14 +1288,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                 final_colors[i].append([[None, None], [None, None, None]])
                 new_datapoints_colors[i].append([None, None, None])
 
-    print('s', num_lines, "\n")
-    print('f', new_datapoints_colors[0])
-    '''
-    for i in range(len(final_colors)):
-        print('new', final_colors[i], "\n")
-    '''
-    print('most', new_datapoints)
-
     buffer = 50
     correct_final_colors = [[] for k in range(num_lines)]
     # iterate over the number of x-axis values
@@ -1143,18 +1297,14 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
         for j in range(num_lines):
 
             first_val = list(line_colors_dict.values())[j]
-            print('lll', first_val, j)
-            print('asdf', final_colors[i][j][1], "\n")
             if None in final_colors[i][j][1]:
                 correct_final_colors[j].append(
                     [[None, None], [None, None, None]])
-                print('fd', correct_final_colors[j], "\n")
 
             else:
                 color_index = 0
                 # iterate over each datapoint and corresponding color to see if the color matches one in line_colors_dict
                 for k in range(num_lines):
-                    print('yoyo', final_colors[i][k][1])
                     if None in final_colors[i][k][1]:
                         pass
                     else:
@@ -1163,25 +1313,19 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                                 and int(final_colors[i][k][1][1]) in range(int(first_val[1]-buffer), int(first_val[1]+buffer)) \
                                 and int(final_colors[i][k][1][2]) in range(int(first_val[2]-buffer), int(first_val[2]+buffer)):
                             correct_final_colors[j].append(final_colors[i][k])
-                            print('kj', correct_final_colors[j], "\n")
                             color_index += 1
                 if color_index == 0:
 
                     correct_final_colors[j].append(
                         [[None, None], [None, None, None]])
 
-    for i in range(len(correct_final_colors)):
-        print(i)
-        print('ppp', correct_final_colors[i], "\n")
-
-    print('ggggggggg', len(correct_final_colors[0]))
+    
     # a list with sublists. number of sublists is determined by the number of lines
     line_positions = [[] for k in range(num_lines)]
     yAxis_values = []
     yAxis_values = calculate_yAxis_values(
         cropped_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph)
 
-    print('yyy', yAxis_values)
     # each sublist in line_positions represents each line's y coordinates and a number from 1 to the number of x-axis values
     # eg [[(1, 213), (2, 222)], (1,124), (2, 211)] there are two lines and two x-axis values. the value on the right in
     # the tuple indicates the y coordinate at the corresponding x-axis value
@@ -1208,7 +1352,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
             y = line_data[i+1][j][1]
             if y != None:
                 min_position[i].append((y))
-                print('dddssss', min_position[i])
             if y != None:
                 max_position[i].append((y))
         min_points[i+1] = (min(min_position[i]))
@@ -1557,7 +1700,7 @@ pause_play_button["state"] = "disabled"
 # Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
 # Add functionality to grab proper files (.wav .json ...) from folder on old graph load
 # .wav
-# adding slopes stuff @ alex
+# DONE - adding slopes stuff @ alex 
 # play entire line desc
 # play tut
 # enable buttons on load wav:
