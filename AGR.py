@@ -41,8 +41,8 @@ from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 import subprocess
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
-# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
+pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
 
 # Global
 x_axis_pos = []  # image1 (98, 395), (543, 395)
@@ -87,7 +87,7 @@ def upload():
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
                                            ("Image Files", ".png .jpg .gif .img")])
     listbox.insert(END, file_path)
-    
+
     if (len(file_path) > 247):
         messagebox.showerror(
             title="AGR:Error", message="File path is too long.")
@@ -181,7 +181,7 @@ def upload():
         for i in range(len(y_axis_title)):
             yAxis_title = ''
             yAxis_title += y_axis_title[i] + ' '
-            
+
         X_AXIS_MIN = 0
         J_GRAPH_TITLE = str(get_graph_title(cropped_img))
         J_X_AXIS_TITLE = xAxis_title
@@ -253,12 +253,12 @@ def upload():
 
         if J_GRAPH_TITLE == None:
             audText += "The graph title could not be found. \n"
-        else:    
+        else:
             audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
 
         if J_X_AXIS_TITLE == None:
             audText += "The x-axis title could not be found. \n"
-        else:    
+        else:
             audText += "The x-axis is titled "
             for i in range(len(x_axis_title)):
                 audText += x_axis_title[i] + ' '
@@ -266,7 +266,7 @@ def upload():
 
         if J_X_AXIS_VALUES == None:
             audText += "The x-axis values could not be found. \n"
-        else:    
+        else:
             audText += "The x-axis values are "
             for i in range(len(x_axis_values)):
                 audText += x_axis_values[i] + ', '
@@ -274,15 +274,15 @@ def upload():
 
         if J_Y_AXIS_TITLE == None:
             audText += "The y-axis title could not be found. \n"
-        else:    
+        else:
             audText += "The y-axis is titled "
             for i in range(len(y_axis_title)):
                 audText += y_axis_title[i] + ' '
             audText += ". \n"
-        
+
         if J_Y_AXIS_VALUES == None:
             audText += "The y-axis values could not be found. \n"
-        else:    
+        else:
             audText += "The y-axis values are "
             for i in range(len(y_axis_values)):
                 audText += y_axis_values[i] + ', '
@@ -290,27 +290,33 @@ def upload():
 
         if J_NUM_LINES == None:
             audText += "The number of lines on the graph could not be found. \n"
-        else:    
+        else:
             audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
-        
+
         # TODO check if "stays the same" to change the text put in .txt file, do for if, elif, and else
         # check for intersections
         lines_vals = line_data.items()
         for key, values in lines_vals:
             for i in range(len(values) - 1):
                 if i == 0:
-                    #if slope_strings[key][i] == "stays the same":
-                    #else:vvvvvvv:
+                    # if slope_strings[key][i] == "stays the same":
+                    # else:vvvvvvv:
                     lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and goes " \
-                    + slope_strings[key][i] + " to " + str(values[i + 1][1]) + ".\n"
+                        + slope_strings[key][i] + " to " + \
+                        str(values[i + 1][1]) + ".\n"
                 elif i > 0 and i < len(values) - 2:
-                    lineString += "Line " + str(key) + " then goes " + slope_strings[key][i] + " to " + str(values[i + 1][1]) + ".\n"
+                    lineString += "Line " + \
+                        str(key) + " then goes " + \
+                        slope_strings[key][i] + " to " + \
+                        str(values[i + 1][1]) + ".\n"
                 else:
-                    lineString += "Finally, line " + str(key) + " goes " + slope_strings[key][i] + " to " + str(values[i + 1][1]) + ".\n"
+                    lineString += "Finally, line " + \
+                        str(key) + " goes " + \
+                        slope_strings[key][i] + " to " + \
+                        str(values[i + 1][1]) + ".\n"
             # TODO create .wav file for each line
             #tts = gTTS(lineString)
             #tts.save(str(key) + '.mp3')
-                
 
             audText += lineString  # adds line information to complete text file
 
@@ -346,13 +352,18 @@ def upload():
             print(os.getcwd())
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
-            ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + '"'
+            ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
             my_command = ffmpeg_path + " -i " + src_mp3 + des_wav
-            print("command: " + my_command) 
-            proc = subprocess.Popen( 
+            print("command: " + my_command)
+            proc = subprocess.Popen(
                 my_command, shell=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            time.sleep(1)
+            if os.path.isfile(des_wav) == True:
+                pass
+            else:
+                time.sleep(0.25)  # Should change this to check if file exists
+                print("waiting")
+
         img = Image.open(file_path)
         if img.size[0] > 690 or img.size[1] > 545:
             img = img.resize((690, 545), Image.ANTIALIAS)
@@ -361,14 +372,14 @@ def upload():
                          height=505, image=openImg)
         image.image = openImg
         image.place(x=160, y=120)
-        
+
         if pause_play_button["state"] == "disabled":
             pause_play_button["state"] = "normal"
         if replay_button["state"] == "disabled":
             replay_button["state"] = "normal"
         if replay_button["state"] == "disabled":
             replay_button["state"] = "normal"
-        
+
         play_entire_graph_desc_fn(path)
 
     print(file_path + " has been opened in the preview window")
@@ -382,7 +393,7 @@ def upload():
 
 def load_previous_graph_fn():
     # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
-    AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/")) 
+    AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
             ("Image Files", ".png .jpg .gif .img")])
@@ -422,13 +433,6 @@ def play_entire_graph_desc_fn(path):
             sound_file2 += item
     print("sf2: " + sound_file2)
 
-    if os.path.isfile(sound_file2):
-        print("IsFile")
-    else:
-        print("noFile")
-
-    # wf = wave.open(
-    # 'C:\\Users\\Think\\Desktop\\AGR\\Graphs\\image4.gif.1586832607\\everything.wav', 'rb')
     wf = wave.open(sound_file, 'rb')
     print(sound_file, " loaded")
 
@@ -515,7 +519,6 @@ def play_pause():  # playing_bool):
 def key(event):
     global line_1_button
 
-   
     # pretty print keys
     key_char = event.char
     key_symb = event.keysym
@@ -899,7 +902,7 @@ def getIntersections(points, x_axis_values, num_lines, biggest_max):
             x = x_y_vals[2 * j]
             y = x_y_vals[2 * j + 1]
             if m1 == None or x == None or y == None:
-                b1 = None    
+                b1 = None
             else:
                 b1 = y - (m1 * x)
 
@@ -927,23 +930,22 @@ def getIntersections(points, x_axis_values, num_lines, biggest_max):
                 b2 = equations[eq][1]
                 if m1 == None or m2 == None or b1 == None or b2 == None:
                     m3 = None
-                    b3 = None                    
+                    b3 = None
                 else:
                     b3 = b2 - b1
                     m3 = m1 - m2
-                
+
                 if m3 == 0:  # means the lines are parallel and will never intersect or are the same line
                     continue
-                
+
                 if b3 == None or m3 == None:
                     x_i = None
                     y_i = None
-                else:   
+                else:
                     x_i = b3/m3
                     if x_i > x_max or x_i < X_MIN:
                         continue
-                
-                
+
                 if x_i != None and y_i != None:
                     y_i = round((m1 * x_i) + b1, 1)
                     x_i = round(x_i, 1)
@@ -1319,7 +1321,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                     correct_final_colors[j].append(
                         [[None, None], [None, None, None]])
 
-    
     # a list with sublists. number of sublists is determined by the number of lines
     line_positions = [[] for k in range(num_lines)]
     yAxis_values = []
@@ -1700,7 +1701,7 @@ pause_play_button["state"] = "disabled"
 # Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
 # Add functionality to grab proper files (.wav .json ...) from folder on old graph load
 # .wav
-# DONE - adding slopes stuff @ alex 
+# DONE - adding slopes stuff @ alex
 # play entire line desc
 # play tut
 # enable buttons on load wav:
