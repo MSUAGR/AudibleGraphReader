@@ -40,6 +40,7 @@ import math
 from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 import subprocess
+from tkinter.ttk import Progressbar
 
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
@@ -50,8 +51,15 @@ y_axis_pos = []  # image1 (95, 393), (97, 85)
 playing_bool = False
 global img
 global file_path
+global path
+global program_path
+
+program_path = os.getcwd()
+
 sound_file = ''
+
 GUI = tk.Tk()
+
 listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
 # Open blank Wav file
@@ -82,317 +90,341 @@ stream.stop_stream()
 def upload():
     global listbox
     global load_previous_graph
+    global play_entire_graph_desc
     global sound_file
-    print('yes')
+    global prog_bar
+    global path
+
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
                                            ("Image Files", ".png .jpg .gif .img")])
-    listbox.insert(END, file_path)
 
-    if (len(file_path) > 247):
-        messagebox.showerror(
-            title="AGR:Error", message="File path is too long.")
-        print(" Error: File path is too long")
-    else:
-        file_name, file_extension = os.path.splitext(file_path)
-        og_file_name = path_leaf(file_path)
+    if os.path.isfile(file_path):
 
-        regex = '<>:"|?*'
-        for char in regex:
-            if char in og_file_name:
+        prog_bar.place(x=280, y=120)
+        prog_bar.step(10)
+        background.update()
+
+        listbox.insert(END, file_path)
+
+        if (len(file_path) > 247):
+            messagebox.showerror(
+                title="AGR:Error", message="File path is too long.")
+            print(" Error: File path is too long")
+        else:
+            file_name, file_extension = os.path.splitext(file_path)
+            og_file_name = path_leaf(file_path)
+
+            regex = '<>:"|?*'
+            for char in regex:
+                if char in og_file_name:
+                    messagebox.showerror(
+                        title="AGR:Error", message="File path has illegal chars.")
+                    print(" Error: File path must not contain ",
+                          str(char), " or <>\":|?*")
+                    return False
+
+            if os.path.getsize(file_path) >= 1000000:
                 messagebox.showerror(
-                    title="AGR:Error", message="File path has illegal chars.")
-                print(" Error: File path must not contain ",
-                      str(char), " or <>\":|?*")
+                    title="AGR:Error", message="File is too large.")
+                print(" Error: File is too large, must be less than 1 MB")
                 return False
 
-        if os.path.getsize(file_path) >= 1000000:
-            messagebox.showerror(
-                title="AGR:Error", message="File is too large.")
-            print(" Error: File is too large, must be less than 1 MB")
-            return False
+            now = datetime.now()
+            timestamp = str(round(datetime.timestamp(now)))
 
-        now = datetime.now()
-        timestamp = str(round(datetime.timestamp(now)))
+            new_file_name = og_file_name + "." + timestamp
+            # print("newfilename: ", new_file_name)
 
-        new_file_name = og_file_name + "." + timestamp
-        # print("newfilename: ", new_file_name)
+            desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
+            path = desktop + "/AGR/Graphs/" + new_file_name + "/"
 
-        desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
-        path = desktop + "/AGR/Graphs/" + new_file_name + "/"
-
-        try:
-            os.makedirs(path)  # Create all necessary directories
-        except OSError:
-            print(" Error: Creation of the directory %s failed" % path)
-        else:
-            print(" info: Successfully created the directory %s" % path)
-
-        shutil.copy(file_path, path)
-
-        # change wd to path of desktop
-        os.chdir(path)
-
-        # check if img is png
-        if og_file_name[-4:] in {'.png'}:
-            img = Image.open(og_file_name)
-            img = cv2.imread(og_file_name)  # 'eimg.png')
-        else:
-            name_no_ext = og_file_name.split('.')
-            # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
-            img = Image.open(og_file_name).save(path + name_no_ext[0] + '.png')
-            img = cv2.imread(name_no_ext[0] + '.png')  # 'eimg.png')
-
-        # img = ImageEnhance.Sharpness(img.convert('RGB'))
-        # img = img.enhance(5.0).save('eimg.png')
-
-        img_size = img.shape
-        print(img_size)
-        y_pixels_height = img.shape[0]
-        x_pixels_width = img.shape[1]
-        cropped_img = img[10: y_pixels_height-10, 10: x_pixels_width-10]
-        cropped_y_pixels_height = img.shape[0]
-        cropped_x_pixels_width = img.shape[1]
-        print(cropped_img.shape)
-        x_axis_exists = True
-        y_axis_exists = True
-
-        cropped_x_axis = cropped_img[round(
-            cropped_y_pixels_height*0.7): cropped_y_pixels_height, 0: cropped_x_pixels_width]
-
-        cropped_y_axis = cropped_img[0: cropped_y_pixels_height, 0: round(
-            cropped_x_pixels_width*0.3)]
-
-        xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
-
-        y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
-            cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
-
-        y_axis_values, biggest_max, y_axis_title = get_ydata(
-            cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
-
-        line_data, x_axis_values, num_lines, x_axis_title = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
-                                                                      x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
-
-        # ASSIGN VARIABLES
-        for i in range(len(x_axis_title)):
-            xAxis_title = ''
-            xAxis_title += x_axis_title[i] + ' '
-
-        for i in range(len(y_axis_title)):
-            yAxis_title = ''
-            yAxis_title += y_axis_title[i] + ' '
-
-        X_AXIS_MIN = 0
-        J_GRAPH_TITLE = str(get_graph_title(cropped_img))
-        J_X_AXIS_TITLE = xAxis_title
-        J_Y_AXIS_TITLE = yAxis_title
-        J_X_AXIS_VALUES = x_axis_values
-        J_Y_AXIS_VALUES = y_axis_values
-        J_ORIGIN = str(origin)
-        J_NUM_LINES = str(num_lines)
-
-        # SET CORRECT VALS HERE
-        J_FOUND_COLORS = "toBeDetermined"
-        J_DATA_POINTS = "toBeDetermined"  # xcoords
-        J_LEGEND_DATA = "toBeDetermined"  # dict
-
-        # pass dict of points
-        # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
-        #              (1, 200), (2, 429), (3, 400), (4, 300), (5, 500)], 3: [(1, 0), (2, 100), (3, 250), (4, 450), (5, 440)]})
-        trend_line_dict, slope_strings, intersections_dict = getIntersections(
-            line_data, x_axis_values, num_lines, biggest_max)
-
-        x = {
-            "image_name": new_file_name,
-            "main_title": J_GRAPH_TITLE,  # STRING
-            "x_axis_title": J_X_AXIS_TITLE,  # STRING
-            "x_axis_values": J_X_AXIS_VALUES,  # LIST
-            "y_axis_title": J_Y_AXIS_TITLE,  # STRING
-            "y_axis_values": J_Y_AXIS_VALUES,  # LIST
-            "num_lines": J_NUM_LINES,
-            "found_colors": J_FOUND_COLORS,  # LIST OF RGB
-            "data_points": J_DATA_POINTS,  # LIST OF TUPLES
-            "origin": J_ORIGIN,  # TUPLE
-            "legend_data": J_LEGEND_DATA  # DICT (line names, line colors)
-        }
-
-        try:
-            f = open(path + og_file_name +
-                     ".json", 'w')  # Create .json file
-        except:
-            print(" Error: JSON file creation failed")
-        else:
-            print(" info: Successfully created .json")
-
-        try:
-            jsonData = json.dumps(x,  indent=2)  # with newline
-            # jsonData = json.dumps(x)   # without newline
-            # print(jsonData)
-            print(" info: Successfully dumpt json")
-        except:
-            print(" Error: Unable to format json")
-            pass
-
-        try:
-            f.write(jsonData)
-            print(" info: Successfully wrote json data")
-        except:
-            print(" Error: Unable to write json")
-
-        f.close()
-
-        audText = ''
-        line_1_text = ''
-        line_2_text = ''
-        line_3_text = ''
-        line_4_text = ''
-        line_5_text = ''
-        line_6_text = ''
-        line_7_text = ''
-        line_8_text = ''
-
-        if J_GRAPH_TITLE == None:
-            audText += "The graph title could not be found. \n"
-        else:
-            audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
-
-        if J_X_AXIS_TITLE == None:
-            audText += "The x-axis title could not be found. \n"
-        else:
-            audText += "The x-axis is titled "
-            for i in range(len(x_axis_title)):
-                audText += x_axis_title[i] + ' '
-            audText += ". \n"
-
-        if J_X_AXIS_VALUES == None:
-            audText += "The x-axis values could not be found. \n"
-        else:
-            audText += "The x-axis values are "
-            for i in range(len(x_axis_values)):
-                audText += x_axis_values[i] + ', '
-            audText += ". \n"
-
-        if J_Y_AXIS_TITLE == None:
-            audText += "The y-axis title could not be found. \n"
-        else:
-            audText += "The y-axis is titled "
-            for i in range(len(y_axis_title)):
-                audText += y_axis_title[i] + ' '
-            audText += ". \n"
-
-        if J_Y_AXIS_VALUES == None:
-            audText += "The y-axis values could not be found. \n"
-        else:
-            audText += "The y-axis values are "
-            for i in range(len(y_axis_values)):
-                audText += y_axis_values[i] + ', '
-            audText += ". \n"
-
-        if J_NUM_LINES == None:
-            audText += "The number of lines on the graph could not be found. \n"
-        else:
-            audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
-
-        # TODO check if "stays the same" to change the text put in .txt file, do for if, elif, and else
-        # check for intersections
-        lines_vals = line_data.items()
-        for key, values in lines_vals:
-            for i in range(len(values) - 1):
-                if i == 0:
-                    # if slope_strings[key][i] == "stays the same":
-                    # else:vvvvvvv:
-                    lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and goes " \
-                        + slope_strings[key][i] + " to " + \
-                        str(values[i + 1][1]) + ".\n"
-                elif i > 0 and i < len(values) - 2:
-                    lineString += "Line " + \
-                        str(key) + " then goes " + \
-                        slope_strings[key][i] + " to " + \
-                        str(values[i + 1][1]) + ".\n"
-                else:
-                    lineString += "Finally, line " + \
-                        str(key) + " goes " + \
-                        slope_strings[key][i] + " to " + \
-                        str(values[i + 1][1]) + ".\n"
-            # TODO create .wav file for each line
-            #tts = gTTS(lineString)
-            #tts.save(str(key) + '.mp3')
-
-            audText += lineString  # adds line information to complete text file
-
-        aud_text_file_name = new_file_name + '.txt'
-
-        try:
-            f = open(aud_text_file_name, "w+")  # create read/write
-            print(" info: Successfully created text file")
             try:
-                f.write(audText)
-                print(" info: Successfully wrote text data")
-                try:
-                    os.chmod(aud_text_file_name, S_IREAD | S_IRGRP |
-                             S_IROTH)  # lock file to read-only
-                    print(" info: Succesfully write locked text file")
-                except:
-                    print(" Error: Unable to lock file to read only")
+                os.makedirs(path)  # Create all necessary directories
+            except OSError:
+                print(" Error: Creation of the directory %s failed" % path)
+            else:
+                print(" info: Successfully created the directory %s" % path)
+
+            shutil.copy(file_path, path)
+
+            # change wd to path of desktop
+            os.chdir(path)
+
+            # check if img is png
+            if og_file_name[-4:] in {'.png'}:
+                img = Image.open(og_file_name)
+                img = cv2.imread(og_file_name)  # 'eimg.png')
+            else:
+                name_no_ext = og_file_name.split('.')
+                # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
+                img = Image.open(og_file_name).save(
+                    path + name_no_ext[0] + '.png')
+                img = cv2.imread(name_no_ext[0] + '.png')  # 'eimg.png')
+
+            # img = ImageEnhance.Sharpness(img.convert('RGB'))
+            # img = img.enhance(5.0).save('eimg.png')
+
+            img_size = img.shape
+            print(img_size)
+            y_pixels_height = img.shape[0]
+            x_pixels_width = img.shape[1]
+            cropped_img = img[10: y_pixels_height-10, 10: x_pixels_width-10]
+            cropped_y_pixels_height = img.shape[0]
+            cropped_x_pixels_width = img.shape[1]
+            print(cropped_img.shape)
+            x_axis_exists = True
+            y_axis_exists = True
+
+            prog_bar.step(10)
+            background.update()
+
+            cropped_x_axis = cropped_img[round(
+                cropped_y_pixels_height*0.7): cropped_y_pixels_height, 0: cropped_x_pixels_width]
+
+            cropped_y_axis = cropped_img[0: cropped_y_pixels_height, 0: round(
+                cropped_x_pixels_width*0.3)]
+
+            xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
+
+            prog_bar.step(20)
+            background.update()
+
+            y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
+                cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
+
+            y_axis_values, biggest_max, y_axis_title = get_ydata(
+                cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
+
+            line_data, x_axis_values, num_lines, x_axis_title = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
+                                                                          x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
+
+            # ASSIGN VARIABLES
+            for i in range(len(x_axis_title)):
+                xAxis_title = ''
+                xAxis_title += x_axis_title[i] + ' '
+
+            for i in range(len(y_axis_title)):
+                yAxis_title = ''
+                yAxis_title += y_axis_title[i] + ' '
+
+            X_AXIS_MIN = 0
+            J_GRAPH_TITLE = str(get_graph_title(cropped_img))
+            J_X_AXIS_TITLE = xAxis_title
+            J_Y_AXIS_TITLE = yAxis_title
+            J_X_AXIS_VALUES = x_axis_values
+            J_Y_AXIS_VALUES = y_axis_values
+            J_ORIGIN = str(origin)
+            J_NUM_LINES = str(num_lines)
+
+            # SET CORRECT VALS HERE
+            J_FOUND_COLORS = "toBeDetermined"
+            J_DATA_POINTS = "toBeDetermined"  # xcoords
+            J_LEGEND_DATA = "toBeDetermined"  # dict
+
+            # pass dict of points
+            # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
+            #              (1, 200), (2, 429), (3, 400), (4, 300), (5, 500)], 3: [(1, 0), (2, 100), (3, 250), (4, 450), (5, 440)]})
+            trend_line_dict, slope_strings, intersections_dict = getIntersections(
+                line_data, x_axis_values, num_lines, biggest_max)
+
+            prog_bar.step(20)
+            background.update()
+
+            x = {
+                "image_name": new_file_name,
+                "main_title": J_GRAPH_TITLE,  # STRING
+                "x_axis_title": J_X_AXIS_TITLE,  # STRING
+                "x_axis_values": J_X_AXIS_VALUES,  # LIST
+                "y_axis_title": J_Y_AXIS_TITLE,  # STRING
+                "y_axis_values": J_Y_AXIS_VALUES,  # LIST
+                "num_lines": J_NUM_LINES,
+                "found_colors": J_FOUND_COLORS,  # LIST OF RGB
+                "data_points": J_DATA_POINTS,  # LIST OF TUPLES
+                "origin": J_ORIGIN,  # TUPLE
+                "legend_data": J_LEGEND_DATA  # DICT (line names, line colors)
+            }
+
+            try:
+                f = open(path + og_file_name +
+                         ".json", 'w')  # Create .json file
             except:
-                print(" Error: Unable to write text data")
-            f.close
+                print(" Error: JSON file creation failed")
+            else:
+                print(" info: Successfully created .json")
 
-        except:
-            print(" Error: Unable to create file")
+            try:
+                jsonData = json.dumps(x,  indent=2)  # with newline
+                # jsonData = json.dumps(x)   # without newline
+                # print(jsonData)
+                print(" info: Successfully dumpt json")
+            except:
+                print(" Error: Unable to format json")
+                pass
 
-        gt = True
-        if gt:
+            try:
+                f.write(jsonData)
+                print(" info: Successfully wrote json data")
+            except:
+                print(" Error: Unable to write json")
+
+            f.close()
+
+            audText = ''
+            line_1_text = ''
+            line_2_text = ''
+            line_3_text = ''
+            line_4_text = ''
+            line_5_text = ''
+            line_6_text = ''
+            line_7_text = ''
+            line_8_text = ''
+
+            if J_GRAPH_TITLE == None:
+                audText += "The graph title could not be found. \n"
+            else:
+                audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
+
+            if J_X_AXIS_TITLE == None:
+                audText += "The x-axis title could not be found. \n"
+            else:
+                audText += "The x-axis is titled "
+                for i in range(len(x_axis_title)):
+                    audText += x_axis_title[i] + ' '
+                audText += ". \n"
+
+            if J_X_AXIS_VALUES == None:
+                audText += "The x-axis values could not be found. \n"
+            else:
+                audText += "The x-axis values are "
+                for i in range(len(x_axis_values)):
+                    audText += x_axis_values[i] + ', '
+                audText += ". \n"
+
+            if J_Y_AXIS_TITLE == None:
+                audText += "The y-axis title could not be found. \n"
+            else:
+                audText += "The y-axis is titled "
+                for i in range(len(y_axis_title)):
+                    audText += y_axis_title[i] + ' '
+                audText += ". \n"
+
+            if J_Y_AXIS_VALUES == None:
+                audText += "The y-axis values could not be found. \n"
+            else:
+                audText += "The y-axis values are "
+                for i in range(len(y_axis_values)):
+                    audText += y_axis_values[i] + ', '
+                audText += ". \n"
+
+            if J_NUM_LINES == None:
+                audText += "The number of lines on the graph could not be found. \n"
+            else:
+                audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
+
+            # TODO check if "stays the same" to change the text put in .txt file, do for if, elif, and else
+            # check for intersections
+            lines_vals = line_data.items()
+            for key, values in lines_vals:
+                for i in range(len(values) - 1):
+                    if i == 0:
+                        # if slope_strings[key][i] == "stays the same":
+                        # else:vvvvvvv:
+                        lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and goes " \
+                            + slope_strings[key][i] + " to " + \
+                            str(values[i + 1][1]) + ".\n"
+                    elif i > 0 and i < len(values) - 2:
+                        lineString += "Line " + \
+                            str(key) + " then goes " + \
+                            slope_strings[key][i] + " to " + \
+                            str(values[i + 1][1]) + ".\n"
+                    else:
+                        lineString += "Finally, line " + \
+                            str(key) + " goes " + \
+                            slope_strings[key][i] + " to " + \
+                            str(values[i + 1][1]) + ".\n"
+
+                # TODO create .wav file for each line
+                #tts = gTTS(lineString)
+                #tts.save(str(key) + '.mp3')
+
+                audText += lineString  # adds line information to complete text file
+
+            aud_text_file_name = new_file_name + '.txt'
+
+            try:
+                f = open(aud_text_file_name, "w+")  # create read/write
+                print(" info: Successfully created text file")
+                try:
+                    f.write(audText)
+                    print(" info: Successfully wrote text data")
+                    try:
+                        os.chmod(aud_text_file_name, S_IREAD | S_IRGRP |
+                                 S_IROTH)  # lock file to read-only
+                        print(" info: Succesfully write locked text file")
+                    except:
+                        print(" Error: Unable to lock file to read only")
+                except:
+                    print(" Error: Unable to write text data")
+                f.close
+
+            except:
+                print(" Error: Unable to create file")
 
             tts = gTTS(audText)
             tts.save('audTex.mp3')
 
-            print(path)
-            print(desktop)
-            print(os.getcwd())
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
             ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
             my_command = ffmpeg_path + " -i " + src_mp3 + des_wav
-            print("command: " + my_command)
             proc = subprocess.Popen(
                 my_command, shell=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            if os.path.isfile(des_wav) == True:
-                pass
-            else:
-                time.sleep(0.25)  # Should change this to check if file exists
-                print("waiting")
+            prog_bar.step(30)
+            background.update()
 
-        img = Image.open(file_path)
-        if img.size[0] > 690 or img.size[1] > 545:
-            img = img.resize((690, 545), Image.ANTIALIAS)
-        openImg = ImageTk.PhotoImage(img)
-        image = tk.Label(master=background, width=690,
-                         height=505, image=openImg)
-        image.image = openImg
-        image.place(x=160, y=120)
+            time.sleep(1.3)
+            # would prefer to check if exist for wait...
+            # while(os.path.isfile(des_wav) == False):
+            #     time.sleep(0.2)
+            #     print("waiting")
 
-        if pause_play_button["state"] == "disabled":
-            pause_play_button["state"] = "normal"
-        if replay_button["state"] == "disabled":
-            replay_button["state"] = "normal"
-        if replay_button["state"] == "disabled":
-            replay_button["state"] = "normal"
+            img = Image.open(file_path)
+            if img.size[0] > 690 or img.size[1] > 545:
+                img = img.resize((690, 545), Image.ANTIALIAS)
+            openImg = ImageTk.PhotoImage(img)
+            image = tk.Label(master=background, width=690,
+                             height=505, image=openImg)
 
-        play_entire_graph_desc_fn(path)
+            image.image = openImg
+            image.place(x=160, y=120)
 
-    print(file_path + " has been opened in the preview window")
+            if pause_play_button["state"] == "disabled":
+                pause_play_button["state"] = "normal"
+            if replay_button["state"] == "disabled":
+                replay_button["state"] = "normal"
+            if replay_button["state"] == "disabled":
+                replay_button["state"] = "normal"
 
-    # if success change enable load prev graph button
-    if load_previous_graph["state"] == "disabled":
-        load_previous_graph["state"] = "normal"
+            prog_bar.place_forget()
 
-    place_line_desc_buttons(num_lines)
+            play_entire_graph_desc_fn(path)
+
+        if play_entire_graph_desc["state"] == "disabled":
+            play_entire_graph_desc["state"] = "normal"
+
+        if load_previous_graph["state"] == "disabled":
+            load_previous_graph["state"] = "normal"
+
+        place_line_desc_buttons(num_lines)
+
+        print(file_path + " has been opened in the preview window")
+
+    else:
+        print("error with file submission")
 
 
 def load_previous_graph_fn():
-    # CAN ONLY GET HERE IF AGR FOLDER EXISTS plzNty
     AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
@@ -408,6 +440,12 @@ def load_previous_graph_fn():
 
     print(file_path + " has been opened in the preview window")
 
+    if play_entire_graph_desc["state"] == "disabled":
+        play_entire_graph_desc["state"] = "normal"
+
+    # TODO
+    # Must load sound files from specified folder
+
 
 def play_entire_graph_desc_fn(path):
     global playing_bool
@@ -416,36 +454,62 @@ def play_entire_graph_desc_fn(path):
     global wf
     global sound_file
 
-    if playing_bool or stream.is_active():
-        stream.stop_stream()
+    if (os.path.isdir(path)):
+        if playing_bool or stream.is_active():
+            stream.stop_stream()
 
-    os.chdir(path)
-    sound_file = os.getcwd() + r'\everything.wav'
-    print("sound_file: "+sound_file)
-    sound_file = os.path.normpath(sound_file)
-    #sound_file = os.path.normcase(sound_file)
-    print("sound_file: "+sound_file)
-    sound_file2 = ""
-    for item in sound_file:
-        if item == '\\':
-            sound_file2 += r'\\'
-        else:
-            sound_file2 += item
-    print("sf2: " + sound_file2)
+        os.chdir(path)
+        sound_file = os.getcwd() + r'\everything.wav'
+        sound_file = os.path.normpath(sound_file)
 
-    wf = wave.open(sound_file, 'rb')
-    print(sound_file, " loaded")
+        wf = wave.open(sound_file, 'rb')
+        print(sound_file, " loaded")
 
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True,
-                    stream_callback=callback)
-    return stream
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True,
+                        stream_callback=callback)
+        return stream
+
+    else:
+        print("Path not yet defined, cant find sound file..")
+        return False
 
 
 def play_tutorial():
-    print("Playing Tut")
+    global playing_bool
+    global stream
+    global p
+    global wf
+    global sound_file
+    global program_path
+
+    # For reference, here is the tut string
+    # my_string = "At any time while using the Audible Graph Reader, you can press the ‘h’ key to load this tutorial. \n To upload a graph, select the 'Upload Graph' button or use the ‘u’ key. Only images of .img, .jpg, .png, and .gif under 1 MB are accepted. \n To load a previous graph, select the 'Load Previous Graph' or use the ‘i’ key. \n After selecting the appropriate button, you will be prompted to choose a graph from a file selection menu. \n Once the graph image is chosen, the program will automatically analyze your selected graph. \n After analysis, the preview window is populated with your selected image, and the graph’s description will begin being audibly read to the user. \n At any time If a voice file is ready to play, the space bar will pause or play the audio file. Once the audio has finished playing, press the r key to replay the audio file. \n Navigating the description of the graph via the use of hotkeys: To hear the entire graph’s description, hit the ‘`’ (tilde / accent key)(quote left). If the graph has multiple lines, use the number keys one through eight (1 – 8) to hear a single line’s description. \n If you are finished hearing a graph’s description, you may choose to select a new graph with the ‘u’ key, or a previously loaded graph with the ‘i’ key. If you are finished with the program, you may hit the escape key to exit."
+
+    if (os.path.isdir(program_path)):
+        if playing_bool or stream.is_active():
+            stream.stop_stream()
+
+        # os.chdir(path)
+        sound_file = program_path + r'\tutorial.wav'
+        sound_file = os.path.normpath(sound_file)
+        print("tut: " + program_path)
+
+        wf = wave.open(sound_file, 'rb')
+        print(sound_file, " loaded")
+
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True,
+                        stream_callback=callback)
+        return stream
+
+    else:
+        print("err: bad path for tutorial.wav file")
+        return False
 
 
 def play_line_desc(line_number):
@@ -518,12 +582,21 @@ def play_pause():  # playing_bool):
 
 def key(event):
     global line_1_button
+    global line_2_button
+    global line_3_button
+    global line_4_button
+    global line_5_button
+    global line_6_button
+    global line_7_button
+    global line_8_button
+
+    global path
 
     # pretty print keys
-    key_char = event.char
-    key_symb = event.keysym
-    key_code = event.keycode
-    print("Pressed ", key_char, " ", key_symb, " ", key_code)
+    # key_char = event.char
+    # key_symb = event.keysym
+    # key_code = event.keycode
+    # print("Pressed ", key_char, " ", key_symb, " ", key_code)
 
     # play_pause_button.place_forget()
     # play_pause_button.place(x=50, y=60)
@@ -531,14 +604,12 @@ def key(event):
     if event.keysym == 'space':
         play_pause()
     elif event.keysym == '1':
-        print("button1 state: ", line_1_button["state"])
         if line_1_button["state"] == "normal":
             play_line_desc(1)
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '2':
-        print("button2 state: ", line_2_button["state"])
-        if line_1_button["state"] == "normal":
+        if line_2_button["state"] == "normal":
             play_line_desc(2)
         else:
             print(" Error: Line desc not enabled")
@@ -561,6 +632,7 @@ def key(event):
     elif event.keysym == 'u':
         upload()
     elif event.keycode == 27:
+        # On Escape Key press
         ok = messagebox.askokcancel(message="Are you sure you want to exit?")
         if ok:
             exitAGR()
@@ -569,9 +641,9 @@ def key(event):
             load_previous_graph_fn()
         else:
             print(" Error: Open prev graph not enabled")
-
     elif event.keycode == 192:
-        play_entire_graph_desc_fn()
+        # On '``' key press (aka tilde key)
+        play_entire_graph_desc_fn(path)
 
 
 def place_line_desc_buttons(number_of_lines):
@@ -1607,16 +1679,12 @@ def get_graph_title(cropped_img):
 
 ## End oF Functions ##
 
-
-# If you have a large number of widgets, like it looks like you will for your
-# game you can specify the attributes for all widgets simply like this.
 GUI.option_add("*Button.Background", "light blue")
 GUI.option_add("*Button.Foreground", "black")
 GUI.option_add("*Button.Font", ("Impact", 10))
 
 GUI.title('Audible Graph Reader')
-# You can set the geometry attribute to change the root windows size
-GUI.geometry("900x700")  # You want the size of the app to be 500x500
+GUI.geometry("900x700")
 GUI.resizable(0, 0)  # Don't allow resizing in the x or y direction
 
 background = tk.Frame(master=GUI, bg='white')
@@ -1627,7 +1695,6 @@ background.pack(fill=tk.BOTH, expand=1)
 
 listbox.place(x=180, y=80)
 
-# Changed variables so you don't have these set to None from .pack()
 welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
                          bg='white', fg='black', font=("Impact", 20))
 welcome_label.pack()
@@ -1636,7 +1703,7 @@ upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
 
 play_entire_graph_desc = tk.Button(master=background, text='Explain Graph',
-                                   width=19, command=play_entire_graph_desc_fn)
+                                   width=19, command=lambda: play_entire_graph_desc_fn(path))
 
 tutorial_button = tk.Button(master=background, text='Tutorial',
                             width=19, command=play_tutorial)
@@ -1685,6 +1752,10 @@ load_previous_graph.place(x=30, y=300)
 pause_play_button.place(x=30, y=360)
 replay_button.place(x=30, y=420)
 exit_button.place(x=30, y=640)
+
+prog_bar = Progressbar(background, orient=HORIZONTAL, length=200,
+                       mode="determinate", takefocus=True, maximum=100)
+
 
 replay_button["state"] = "disabled"
 play_entire_graph_desc["state"] = "disabled"
