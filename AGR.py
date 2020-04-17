@@ -62,6 +62,7 @@ GUI = tk.Tk()
 
 listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
+
 # Open blank Wav file
 wf = wave.open('blank.wav', 'r')
 
@@ -89,8 +90,8 @@ stream.stop_stream()
 
 def upload():
     global listbox
-    global load_previous_graph
-    global play_entire_graph_desc
+    global load_previous_graph_button
+    global play_entire_graph_desc_button
     global sound_file
     global prog_bar
     global path
@@ -99,8 +100,9 @@ def upload():
                                            ("Image Files", ".png .jpg .gif .img")])
 
     if os.path.isfile(file_path):
-
-        prog_bar.place(x=280, y=120)
+        remove_line_desc_buttons(8)
+        prog_bar["value"] = 0
+        prog_bar.place(x=30, y=90)
         prog_bar.step(10)
         background.update()
 
@@ -186,7 +188,7 @@ def upload():
 
             xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
 
-            prog_bar.step(20)
+            prog_bar.step(10)
             background.update()
 
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
@@ -227,7 +229,7 @@ def upload():
             trend_line_dict, slope_strings, intersections_dict = getIntersections(
                 line_data, x_axis_values, num_lines, biggest_max)
 
-            prog_bar.step(20)
+            prog_bar.step(10)
             background.update()
 
             x = {
@@ -357,6 +359,9 @@ def upload():
 
             aud_text_file_name = new_file_name + '.txt'
 
+            prog_bar.step(10)
+            background.update()
+
             try:
                 f = open(aud_text_file_name, "w+")  # create read/write
                 print(" info: Successfully created text file")
@@ -379,7 +384,10 @@ def upload():
             tts = gTTS(audText)
             tts.save('audTex.mp3')
 
-            print("creating everything.wav")
+            prog_bar.step(10)
+            background.update()
+
+            #print("creating everything.wav")
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
             ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
@@ -390,11 +398,11 @@ def upload():
 
             # Convert each line mp3 to wav..
             for key, values in lines_vals:
-                print("creating " + str(key) + ".wav")
+                #print("creating " + str(key) + ".wav")
                 src_mp3 = '"' + path + str(key) + ".mp3" + '"'
-                print("srcmp3: " + src_mp3)
+                #print("srcmp3: " + src_mp3)
                 dest_wav = ' "' + path + str(key) + ".wav" + '"'
-                print("destwav: " + dest_wav)
+                #print("destwav: " + dest_wav)
                 ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
                 my_command = ffmpeg_path + " -i " + src_mp3 + dest_wav
                 proc = subprocess.Popen(
@@ -431,11 +439,11 @@ def upload():
 
             play_entire_graph_desc_fn(path)
 
-        if play_entire_graph_desc["state"] == "disabled":
-            play_entire_graph_desc["state"] = "normal"
+        if play_entire_graph_desc_button["state"] == "disabled":
+            play_entire_graph_desc_button["state"] = "normal"
 
-        if load_previous_graph["state"] == "disabled":
-            load_previous_graph["state"] = "normal"
+        if load_previous_graph_button["state"] == "disabled":
+            load_previous_graph_button["state"] = "normal"
 
         place_line_desc_buttons(num_lines)
 
@@ -455,6 +463,13 @@ def load_previous_graph_fn():
             ("Image Files", ".png .jpg .gif .img")])
 
     if os.path.isfile(file_path):
+        remove_line_desc_buttons(8)
+        prog_bar.place(x=30, y=90)
+        prog_bar["value"] = 0
+
+        prog_bar.step(10)
+        background.update()
+
         img = Image.open(file_path)
         if img.size[0] > 690 or img.size[1] > 545:
             img = img.resize((690, 545), Image.ANTIALIAS)
@@ -467,8 +482,8 @@ def load_previous_graph_fn():
 
         print(file_path + " has been opened in the preview window")
 
-        if play_entire_graph_desc["state"] == "disabled":
-            play_entire_graph_desc["state"] = "normal"
+        if play_entire_graph_desc_button["state"] == "disabled":
+            play_entire_graph_desc_button["state"] = "normal"
 
         # TODO
         # Must load sound files from specified folder
@@ -476,6 +491,7 @@ def load_previous_graph_fn():
         # file_path: C:/Users/Think/Desktop/AGR/Graphs/image4.png.1586985645/image4.png
         # load json find num lines, load each aud file
         #
+
     elif (file_path == ""):
         # If empty string: dialog returns with no selection, ie user pressed cancel
         print("User cancelled upload previous image")
@@ -639,7 +655,10 @@ def key(event):
     # play_pause_button.place(x=50, y=60)
 
     if event.keysym == 'space':
-        play_pause()
+        if pause_play_button["state"] == "normal":
+            play_pause()
+        else:
+            print(" Error: Pause/Play Button not enabled")
     elif event.keysym == '1':
         if line_1_button["state"] == "normal":
             play_line_desc(1)
@@ -681,25 +700,38 @@ def key(event):
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == 'h':
-        play_tutorial()
+        if tutorial_button["state"] == "noraml":
+            play_tutorial()
+        else:
+            print(" Error: Tutorial button not enabled")
     elif event.keysym == 'r':
         if replay_button["state"] == "normal":
             replay()
     elif event.keysym == 'u':
-        upload()
+        if upload_button["state"] == "normal":
+            upload()
+        else:
+            print(" Error: Upload button not enabled")
     elif event.keycode == 27:
         # On Escape Key press
-        ok = messagebox.askokcancel(message="Are you sure you want to exit?")
-        if ok:
-            exitAGR()
+        if exit_button["state"] == "normal":
+            ok = messagebox.askokcancel(
+                message="Are you sure you want to exit?")
+            if ok:
+                exitAGR()
+        else:
+            print(" Error: Exit button not enabled")
     elif event.keysym == 'i':
-        if load_previous_graph["state"] == "normal":
+        if load_previous_graph_button["state"] == "normal":
             load_previous_graph_fn()
         else:
             print(" Error: Open prev graph not enabled")
     elif event.keycode == 192:
         # On '``' key press (aka tilde key)
-        play_entire_graph_desc_fn(path)
+        if play_entire_graph_desc_button["state"] == "normal":
+            play_entire_graph_desc_fn(path)
+        else:
+            print(" Error: Explain Graph button not enabled")
 
 
 def place_line_desc_buttons(number_of_lines):
@@ -887,6 +919,24 @@ def remove_line_desc_buttons(number_of_lines):
         line_1_button["state"] = "disabled"
     else:
         print(" Error: bad args on remove_line_desc_buttons() line buttons, must be integer between 1 and 8")
+
+
+# def disable_menu_buttons():
+#     global upload_button
+#     global play_entire_graph_desc_button
+#     global tutorial_button
+#     global load_previous_graph_button
+#     global pause_play_button
+#     global replay_button
+#     global exit_button
+
+#     upload_button["state"] = "disabled"
+#     play_entire_graph_desc_button["state"] = "disabled"
+#     tutorial_button["state"] = "disabled"
+#     load_previous_graph_button["state"] = "disabled"
+#     pause_play_button["state"] = "disabled"
+#     replay_button["state"] = "disabled"
+#     exit_button["state"] = "disabled"
 
 
 def exitAGR():
@@ -1766,14 +1816,14 @@ welcome_label.pack()
 upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
 
-play_entire_graph_desc = tk.Button(master=background, text='Explain Graph',
-                                   width=19, command=lambda: play_entire_graph_desc_fn(path))
+play_entire_graph_desc_button = tk.Button(master=background, text='Explain Graph',
+                                          width=19, command=lambda: _button_fn(path))
 
 tutorial_button = tk.Button(master=background, text='Tutorial',
                             width=19, command=play_tutorial)
 
-load_previous_graph = tk.Button(master=background, text='Load Previous Graph',
-                                width=19, command=load_previous_graph_fn)
+load_previous_graph_button = tk.Button(master=background, text='Load Previous Graph',
+                                       width=19, command=load_previous_graph_fn)
 
 pause_play_button = tk.Button(master=background, text='Pause / Play',
                               width=19, command=play_pause)
@@ -1810,9 +1860,9 @@ line_8_button = tk.Button(master=background, text='Line 8',
 
 
 upload_button.place(x=30, y=120)
-play_entire_graph_desc.place(x=30, y=180)
+play_entire_graph_desc_button.place(x=30, y=180)
 tutorial_button.place(x=30, y=240)
-load_previous_graph.place(x=30, y=300)
+load_previous_graph_button.place(x=30, y=300)
 pause_play_button.place(x=30, y=360)
 replay_button.place(x=30, y=420)
 exit_button.place(x=30, y=640)
@@ -1822,12 +1872,12 @@ prog_bar = Progressbar(background, orient=HORIZONTAL, length=200,
 
 
 replay_button["state"] = "disabled"
-play_entire_graph_desc["state"] = "disabled"
+play_entire_graph_desc_button["state"] = "disabled"
 
 if os.path.exists(os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))) == False:
-    load_previous_graph["state"] = "disabled"
+    load_previous_graph_button["state"] = "disabled"
 else:
-    load_previous_graph["state"] = "normal"
+    load_previous_graph_button["state"] = "normal"
 
 pause_play_button["state"] = "disabled"
 
@@ -1837,14 +1887,13 @@ pause_play_button["state"] = "disabled"
 # enable buttons on load wav:
 #   pause_play_button
 #   replay_button
-#   play_entire_graph_desc
+#   play_entire_graph_desc_button
 
-# Once analyzed
-remove_line_desc_buttons(8)
+# remove_line_desc_buttons(8)
 
 # And place buttons using num_lines
 # place_line_desc_buttons(num_lines)
-
+# remove_line_desc_buttons(8)
 
 GUI.bind("<Key>", key)  # calls key (function above) on Keyboard input
 GUI.resizable(False, False)
