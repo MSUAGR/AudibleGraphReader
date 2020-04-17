@@ -4,10 +4,10 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.16.2020
+# 4.17.2020
 
 # User must install pytesseract version 5
-# blank.wav must exist in same dir as this file
+# blank.wav/tutorial.wav must exist in same dir as this file
 # USE: ./AGR.py
 
 import tkinter as tk
@@ -441,6 +441,9 @@ def upload():
 
         print(file_path + " has been opened in the preview window")
 
+    elif (file_path == ""):
+        # If empty string: dialog returns with no selection, ie user pressed cancel
+        print("User cancelled upload image")
     else:
         print("error with file submission")
 
@@ -450,26 +453,34 @@ def load_previous_graph_fn():
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
             ("Image Files", ".png .jpg .gif .img")])
-    img = Image.open(file_path)
-    if img.size[0] > 690 or img.size[1] > 545:
-        img = img.resize((690, 545), Image.ANTIALIAS)
 
-    openImg = ImageTk.PhotoImage(img)
-    image = tk.Label(master=background, width=690, height=545, image=openImg)
-    image.image = openImg
-    image.place(x=160, y=120)
+    if os.path.isfile(file_path):
+        img = Image.open(file_path)
+        if img.size[0] > 690 or img.size[1] > 545:
+            img = img.resize((690, 545), Image.ANTIALIAS)
 
-    print(file_path + " has been opened in the preview window")
+        openImg = ImageTk.PhotoImage(img)
+        image = tk.Label(master=background, width=690,
+                         height=545, image=openImg)
+        image.image = openImg
+        image.place(x=160, y=120)
 
-    if play_entire_graph_desc["state"] == "disabled":
-        play_entire_graph_desc["state"] = "normal"
+        print(file_path + " has been opened in the preview window")
 
-    # TODO
-    # Must load sound files from specified folder
+        if play_entire_graph_desc["state"] == "disabled":
+            play_entire_graph_desc["state"] = "normal"
 
-    # file_path: C:/Users/Think/Desktop/AGR/Graphs/image4.png.1586985645/image4.png
-    # load json find num lines, load each aud file
-    #
+        # TODO
+        # Must load sound files from specified folder
+
+        # file_path: C:/Users/Think/Desktop/AGR/Graphs/image4.png.1586985645/image4.png
+        # load json find num lines, load each aud file
+        #
+    elif (file_path == ""):
+        # If empty string: dialog returns with no selection, ie user pressed cancel
+        print("User cancelled upload previous image")
+    else:
+        print("error with file submission")
 
 
 def play_entire_graph_desc_fn(path):
