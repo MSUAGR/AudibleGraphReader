@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.13.2020
+# 4.16.2020
 
 # User must install pytesseract version 5
 # blank.wav must exist in same dir as this file
@@ -22,7 +22,7 @@ import os
 from gtts import gTTS
 import cv2
 import sys
-#from sys import argv
+# from sys import argv
 from datetime import datetime
 import os
 import json
@@ -321,31 +321,37 @@ def upload():
             else:
                 audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
 
-            # TODO check if "stays the same" to change the text put in .txt file, do for if, elif, and else
+            # TODO
             # check for intersections
             lines_vals = line_data.items()
             for key, values in lines_vals:
                 for i in range(len(values) - 1):
                     if i == 0:
-                        # if slope_strings[key][i] == "stays the same":
-                        # else:vvvvvvv:
-                        lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and goes " \
-                            + slope_strings[key][i] + " to " + \
+                        # for j in range(len(intersections_dict[key])):
+                        #     if intersections_dict[key][j][1] >= 1 or intersections_dict[key][j][1] <= 2:
+                        #         lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and " \
+                        #             + slope_strings[key][i] + " " + \
+                        #             str(values[i + 1][1]) + " intersecting line " + str(intersections_dict[key][j][0]) + \
+                        #             "at " str(intersections_dict[key][j][2]) + ".\n"
+                        #     else:
+                        lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and " \
+                            + slope_strings[key][i] + " " + \
                             str(values[i + 1][1]) + ".\n"
                     elif i > 0 and i < len(values) - 2:
                         lineString += "Line " + \
-                            str(key) + " then goes " + \
-                            slope_strings[key][i] + " to " + \
+                            str(key) + " then " + \
+                            slope_strings[key][i] + " " + \
                             str(values[i + 1][1]) + ".\n"
                     else:
                         lineString += "Finally, line " + \
-                            str(key) + " goes " + \
-                            slope_strings[key][i] + " to " + \
+                            str(key) + " " + \
+                            slope_strings[key][i] + " " + \
                             str(values[i + 1][1]) + ".\n"
 
-                # TODO create .wav file for each line
-                #tts = gTTS(lineString)
-                #tts.save(str(key) + '.mp3')
+                # create .wav file for each line
+                print(lineString)
+                tts = gTTS(lineString)
+                tts.save(str(key) + '.mp3')
 
                 audText += lineString  # adds line information to complete text file
 
@@ -373,18 +379,33 @@ def upload():
             tts = gTTS(audText)
             tts.save('audTex.mp3')
 
+            print("creating everything.wav")
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
             ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
             my_command = ffmpeg_path + " -i " + src_mp3 + des_wav
             proc = subprocess.Popen(
                 my_command, shell=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print("created everything.wav")
+
+            # Convert each line mp3 to wav..
+            for key, values in lines_vals:
+                print("creating " + str(key) + ".wav")
+                src_mp3 = '"' + path + str(key) + ".mp3" + '"'
+                print("srcmp3: " + src_mp3)
+                dest_wav = ' "' + path + str(key) + ".wav" + '"'
+                print("destwav: " + dest_wav)
+                ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
+                my_command = ffmpeg_path + " -i " + src_mp3 + dest_wav
+                proc = subprocess.Popen(
+                    my_command, shell=key, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                print("created " + str(key) + ".wav")
 
             prog_bar.step(30)
             background.update()
 
-            time.sleep(1.3)
-            # would prefer to check if exist for wait...
+            time.sleep(2)
+            # would prefer to check if exist for wait... further testing needed
             # while(os.path.isfile(des_wav) == False):
             #     time.sleep(0.2)
             #     print("waiting")
@@ -446,6 +467,10 @@ def load_previous_graph_fn():
     # TODO
     # Must load sound files from specified folder
 
+    # file_path: C:/Users/Think/Desktop/AGR/Graphs/image4.png.1586985645/image4.png
+    # load json find num lines, load each aud file
+    #
+
 
 def play_entire_graph_desc_fn(path):
     global playing_bool
@@ -491,7 +516,8 @@ def play_tutorial():
     if (os.path.isdir(program_path)):
         if playing_bool or stream.is_active():
             stream.stop_stream()
-
+        if pause_play_button["state"] == "disabled":
+            pause_play_button["state"] = "normal"
         # os.chdir(path)
         sound_file = program_path + r'\tutorial.wav'
         sound_file = os.path.normpath(sound_file)
@@ -614,21 +640,40 @@ def key(event):
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '3':
-        play_line_desc(3)
+        if line_2_button["state"] == "normal":
+            play_line_desc(3)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '4':
-        play_line_desc(4)
+        if line_2_button["state"] == "normal":
+            play_line_desc(4)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '5':
-        play_line_desc(5)
+        if line_2_button["state"] == "normal":
+            play_line_desc(5)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '6':
-        play_line_desc(6)
+        if line_2_button["state"] == "normal":
+            play_line_desc(6)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '7':
-        play_line_desc(7)
+        if line_2_button["state"] == "normal":
+            play_line_desc(7)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == '8':
-        play_line_desc(8)
+        if line_2_button["state"] == "normal":
+            play_line_desc(8)
+        else:
+            print(" Error: Line desc not enabled")
     elif event.keysym == 'h':
         play_tutorial()
     elif event.keysym == 'r':
-        replay()
+        if replay_button["state"] == "normal":
+            replay()
     elif event.keysym == 'u':
         upload()
     elif event.keycode == 27:
@@ -866,50 +911,56 @@ def getTrendlines(points, y_max):
                 if slope > 0:
                     if slope/MAX_Y_VAL > 0.5:
                         if key in relative_slopes:
-                            relative_slopes[key].append("up sharply")
+                            relative_slopes[key].append("goes up sharply to")
                         else:
-                            relative_slopes[key] = ["up sharply"]
+                            relative_slopes[key] = ["goes up sharply to"]
                     elif slope/MAX_Y_VAL > 0.3:
                         if key in relative_slopes:
-                            relative_slopes[key].append("up significantly")
+                            relative_slopes[key].append(
+                                "goes up significantly to")
                         else:
-                            relative_slopes[key] = ["up significantly"]
+                            relative_slopes[key] = ["goes up significantly to"]
                     elif slope/MAX_Y_VAL > 0.1:
                         if key in relative_slopes:
-                            relative_slopes[key].append("up moderately")
+                            relative_slopes[key].append(
+                                "goes up moderately to")
                         else:
-                            relative_slopes[key] = ["up moderately"]
+                            relative_slopes[key] = ["goes up moderately to"]
                     else:
                         if key in relative_slopes:
-                            relative_slopes[key].append("up slightly")
+                            relative_slopes[key].append("goes up slightly to")
                         else:
-                            relative_slopes[key] = ["up slightly"]
+                            relative_slopes[key] = ["goes up slightly to"]
                 elif slope < 0:
                     if slope/MAX_Y_VAL < -0.5:
                         if key in relative_slopes:
-                            relative_slopes[key].append("down sharply")
+                            relative_slopes[key].append("goes down sharply to")
                         else:
-                            relative_slopes[key] = ["down sharply"]
+                            relative_slopes[key] = ["goes down sharply to "]
                     elif slope/MAX_Y_VAL < -0.3:
                         if key in relative_slopes:
-                            relative_slopes[key].append("down significantly")
+                            relative_slopes[key].append(
+                                "goes down significantly to")
                         else:
-                            relative_slopes[key] = ["down significantly"]
+                            relative_slopes[key] = [
+                                "goes down significantly to"]
                     elif slope/MAX_Y_VAL < -0.1:
                         if key in relative_slopes:
-                            relative_slopes[key].append("down moderately")
+                            relative_slopes[key].append(
+                                "goes down moderately to")
                         else:
-                            relative_slopes[key] = ["down moderately"]
+                            relative_slopes[key] = ["goes down moderately to"]
                     else:
                         if key in relative_slopes:
-                            relative_slopes[key].append("down slightly")
+                            relative_slopes[key].append(
+                                "goes down slightly to")
                         else:
-                            relative_slopes[key] = ["down slightly"]
+                            relative_slopes[key] = ["goes down slightly to"]
                 elif slope == 0:
                     if key in relative_slopes:
-                        relative_slopes[key].append("stays the same")
+                        relative_slopes[key].append("stays the same at")
                     else:
-                        relative_slopes[key] = ["stays the same"]
+                        relative_slopes[key] = ["stays the same at"]
             if key in slopes:
                 slopes[key].append(slope)
             else:
@@ -1176,7 +1227,7 @@ def click_img_x_axis(cropped_img):
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', get_x_axis)
     cv2.imshow('image', cropped_img)
-    #cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
+    # cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
     cv2.waitKey(0)
     if len(x_axis_pos) == 2:
         cv2.destroyAllWindows()
@@ -1186,7 +1237,7 @@ def click_img_y_axis(cropped_img):
     cv2.namedWindow('image')
     cv2.setMouseCallback('image', get_y_axis)
     cv2.imshow('image', cropped_img)
-    #cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
+    # cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
     cv2.waitKey(0)
     if len(y_axis_pos) == 2:
         cv2.destroyAllWindows()
@@ -1605,12 +1656,14 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
     y_pixel_line = cropped_y_pixels_height - y_pixel_line
     datapoints = [[] for k in range(num_lines)]
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
-    pixels_divider = distance_from_top_to_x_axis / float(y_axis_values[0])
+    pixels_divider = distance_from_top_to_x_axis / \
+        (float(y_axis_values[0]) - float(y_axis_values[-1]))
 
     '''
     for i in range(len(correct_final_colors)):
         print('ya', correct_final_colors[i], "\n")
     '''
+
     print(len(new_datapoints), len(new_datapoints[0]))
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[0])):
@@ -1769,12 +1822,7 @@ pause_play_button["state"] = "disabled"
 
 # TODO
 # Verify file path on dialog close , prevent bad/ blank
-# Add hotkey for general graph info apart from data (ie graph title, num lines, etc)
 # Add functionality to grab proper files (.wav .json ...) from folder on old graph load
-# .wav
-# DONE - adding slopes stuff @ alex
-# play entire line desc
-# play tut
 # enable buttons on load wav:
 #   pause_play_button
 #   replay_button
