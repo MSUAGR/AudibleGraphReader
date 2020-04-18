@@ -25,6 +25,7 @@ import sys
 # from sys import argv
 from datetime import datetime
 import os
+import glob
 import json
 import ntpath  # To interact with filepath
 import shutil  # High level file operations (cp img)
@@ -95,12 +96,19 @@ def upload():
     global sound_file
     global prog_bar
     global path
+    # To allow disabling butons
+    global upload_button
+    global tutorial_button
+    global pause_play_button
+    global replay_button
+    global exit_button
 
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
                                            ("Image Files", ".png .jpg .gif .img")])
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
+
         prog_bar["value"] = 0
         prog_bar.place(x=30, y=90)
         prog_bar.step(10)
@@ -130,6 +138,15 @@ def upload():
                     title="AGR:Error", message="File is too large.")
                 print(" Error: File is too large, must be less than 1 MB")
                 return False
+
+            # Prevent extra input from the user
+            upload_button["state"] = "disabled"
+            #play_entire_graph_desc_button["state"] = "disabled"
+            tutorial_button["state"] = "disabled"
+            load_previous_graph_button["state"] = "disabled"
+            pause_play_button["state"] = "disabled"
+            replay_button["state"] = "disabled"
+            exit_button["state"] = "disabled"
 
             now = datetime.now()
             timestamp = str(round(datetime.timestamp(now)))
@@ -209,7 +226,7 @@ def upload():
                 yAxis_title = ''
                 yAxis_title += y_axis_title[i] + ' '
 
-            X_AXIS_MIN = 0
+            # X_AXIS_MIN = 0
             J_GRAPH_TITLE = str(get_graph_title(cropped_img))
             J_X_AXIS_TITLE = xAxis_title
             J_Y_AXIS_TITLE = yAxis_title
@@ -247,8 +264,8 @@ def upload():
             }
 
             try:
-                f = open(path + og_file_name +
-                         ".json", 'w')  # Create .json file
+                # f = open(path + og_file_name + ".json", 'w')  # Create .json file
+                f = open(path + "graph.json", 'w')  # Create .json file
             except:
                 print(" Error: JSON file creation failed")
             else:
@@ -323,32 +340,70 @@ def upload():
             else:
                 audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
 
-            # TODO
-            # check for intersections
             lines_vals = line_data.items()
             for key, values in lines_vals:
                 for i in range(len(values) - 1):
                     if i == 0:
-                        # for j in range(len(intersections_dict[key])):
-                        #     if intersections_dict[key][j][1] >= 1 or intersections_dict[key][j][1] <= 2:
-                        #         lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and " \
-                        #             + slope_strings[key][i] + " " + \
-                        #             str(values[i + 1][1]) + " intersecting line " + str(intersections_dict[key][j][0]) + \
-                        #             "at " str(intersections_dict[key][j][2]) + ".\n"
-                        #     else:
-                        lineString = "Line " + str(key) + " starts at " + str(values[i][1]) + " and " \
+                        j_array = []
+                        if len(intersections_dict) > 0:
+                            for j in range(len(intersections_dict[key])):
+                                if intersections_dict[key][j][1] >= 1 and intersections_dict[key][j][1] <= 2 and intersections_dict[key][j][1] != None:
+                                    j_array.append(j)
+                        lineString = "Line " + str(key) + " starts at the x value of " + str(x_axis_values[i]) + " and the y value of " + str(values[i][1]) + " and " \
                             + slope_strings[key][i] + " " + \
-                            str(values[i + 1][1]) + ".\n"
+                            str(values[i + 1][1]) + " with the x value of " + \
+                            str(x_axis_values[i + 1])
+                        if len(j_array) == 0:
+                            lineString += ".\n"
+                        else:
+                            lineString += ", intersecting "
+                            for j in j_array:
+                                lineString += "with line " + \
+                                    str(intersections_dict[key][j][0]) + " at " + str(
+                                        intersections_dict[key][j][2]) + " between " + str(x_axis_values[i]) + " and " + str(x_axis_values[i + 1]) + " and "
+                            lineString += ".\n"
                     elif i > 0 and i < len(values) - 2:
+                        j_array = []
+                        if len(intersections_dict) > 0:
+                            for j in range(len(intersections_dict[key])):
+                                if intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2) and intersections_dict[key][j][1] != None:
+                                    j_array.append(j)
                         lineString += "Line " + \
                             str(key) + " then " + \
                             slope_strings[key][i] + " " + \
-                            str(values[i + 1][1]) + ".\n"
+                            str(values[i + 1][1]) + " at the x value of " + \
+                            str(x_axis_values[i + 1])
+                        if len(j_array) == 0:
+                            lineString += ".\n"
+                        else:
+                            for j in j_array:
+                                lineString += "and intersects with line " + \
+                                    str(intersections_dict[key][j][0]) + " at " + str(
+                                        intersections_dict[key][j][2]) + " "
+                            lineString += " between " + \
+                                str(x_axis_values[i]) + " and " + \
+                                str(x_axis_values[i + 1]) + ".\n"
                     else:
+                        j_array = []
+                        if len(intersections_dict) > 0:
+                            for j in range(len(intersections_dict[key])):
+                                if intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2) and intersections_dict[key][j][1] != None:
+                                    j_array.append(j)
                         lineString += "Finally, line " + \
                             str(key) + " " + \
-                            slope_strings[key][i] + " " + \
-                            str(values[i + 1][1]) + ".\n"
+                            slope_strings[key][i] + " " +\
+                            str(values[i + 1][1]) + " " + \
+                            " at the x value of " + str(x_axis_values[i + 1])
+                        if len(j_array) == 0:
+                            lineString += ".\n"
+                        else:
+                            for j in j_array:
+                                lineString += "and intersects with line " + \
+                                    str(intersections_dict[key][j][0]) + " at " + str(
+                                        intersections_dict[key][j][2]) + " "
+                            lineString += " between " + \
+                                str(x_axis_values[i]) + " and " + \
+                                str(x_axis_values[i + 1]) + ".\n"
 
                 # create .wav file for each line
                 print(lineString)
@@ -428,26 +483,28 @@ def upload():
             image.image = openImg
             image.place(x=160, y=120)
 
+            print(file_path + " has been opened in the preview window")
+
             if pause_play_button["state"] == "disabled":
                 pause_play_button["state"] = "normal"
             if replay_button["state"] == "disabled":
                 replay_button["state"] = "normal"
-            if replay_button["state"] == "disabled":
-                replay_button["state"] = "normal"
+            if upload_button["state"] == "disabled":
+                upload_button["state"] = "normal"
+            if play_entire_graph_desc_button["state"] == "disabled":
+                play_entire_graph_desc_button["state"] = "normal"
+            if tutorial_button["state"] == "disabled":
+                tutorial_button["state"] = "normal"
+            if load_previous_graph_button["state"] == "disabled":
+                load_previous_graph_button["state"] = "normal"
+            if exit_button["state"] == "disabled":
+                exit_button["state"] = "normal"
 
             prog_bar.place_forget()
 
+            place_line_desc_buttons(num_lines)
+
             play_entire_graph_desc_fn(path)
-
-        if play_entire_graph_desc_button["state"] == "disabled":
-            play_entire_graph_desc_button["state"] = "normal"
-
-        if load_previous_graph_button["state"] == "disabled":
-            load_previous_graph_button["state"] = "normal"
-
-        place_line_desc_buttons(num_lines)
-
-        print(file_path + " has been opened in the preview window")
 
     elif (file_path == ""):
         # If empty string: dialog returns with no selection, ie user pressed cancel
@@ -457,10 +514,15 @@ def upload():
 
 
 def load_previous_graph_fn():
+    global file_path
+    global play_entire_graph_desc_button
     AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
             ("Image Files", ".png .jpg .gif .img")])
+
+    # C:/Users/Think/Desktop/AGR/Graphs/image4.gif.1587179044/image4.png
+    print("file_path: " + file_path)
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
@@ -476,21 +538,28 @@ def load_previous_graph_fn():
 
         openImg = ImageTk.PhotoImage(img)
         image = tk.Label(master=background, width=690,
-                         height=545, image=openImg)
+                         height=505, image=openImg)
         image.image = openImg
         image.place(x=160, y=120)
 
         print(file_path + " has been opened in the preview window")
 
+        # load json find num lines, load each aud file
+        dir_path = os.path.dirname(os.path.realpath(file_path))
+        print("dirPath: " + dir_path)
+
+        os.chdir(dir_path)
+        count = 0
+        for file in glob.glob("*.wav"):
+            count += 1
+
+        prev_num_lines = count - 1
+
+        place_line_desc_buttons(prev_num_lines)
+        prog_bar.place_forget()
         if play_entire_graph_desc_button["state"] == "disabled":
             play_entire_graph_desc_button["state"] = "normal"
-
-        # TODO
-        # Must load sound files from specified folder
-
-        # file_path: C:/Users/Think/Desktop/AGR/Graphs/image4.png.1586985645/image4.png
-        # load json find num lines, load each aud file
-        #
+        play_entire_graph_desc_fn(dir_path)
 
     elif (file_path == ""):
         # If empty string: dialog returns with no selection, ie user pressed cancel
@@ -538,7 +607,25 @@ def play_tutorial():
     global program_path
 
     # For reference, here is the tut string
-    # my_string = "At any time while using the Audible Graph Reader, you can press the ‘h’ key to load this tutorial. \n To upload a graph, select the 'Upload Graph' button or use the ‘u’ key. Only images of .img, .jpg, .png, and .gif under 1 MB are accepted. \n To load a previous graph, select the 'Load Previous Graph' or use the ‘i’ key. \n After selecting the appropriate button, you will be prompted to choose a graph from a file selection menu. \n Once the graph image is chosen, the program will automatically analyze your selected graph. \n After analysis, the preview window is populated with your selected image, and the graph’s description will begin being audibly read to the user. \n At any time If a voice file is ready to play, the space bar will pause or play the audio file. Once the audio has finished playing, press the r key to replay the audio file. \n Navigating the description of the graph via the use of hotkeys: To hear the entire graph’s description, hit the ‘`’ (tilde / accent key)(quote left). If the graph has multiple lines, use the number keys one through eight (1 – 8) to hear a single line’s description. \n If you are finished hearing a graph’s description, you may choose to select a new graph with the ‘u’ key, or a previously loaded graph with the ‘i’ key. If you are finished with the program, you may hit the escape key to exit."
+    # my_string = "At any time while using the Audible Graph Reader,
+    # you can press the ‘h’ key to load this tutorial. \n To upload a graph,
+    #  select the 'Upload Graph' button or use the ‘u’ key. Only images of
+    # .img, .jpg, .png, and .gif under 1 MB are accepted. \n To load a previous
+    #  graph, select the 'Load Previous Graph' or use the ‘i’ key. \n After
+    #  selecting the appropriate button, you will be prompted to choose a graph
+    #  from a file selection menu. \n Once the graph image is chosen, the program
+    #  will automatically analyze your selected graph. \n After analysis, the preview
+    #  window is populated with your selected image, and the graph’s description
+    #  will begin being audibly read to the user. \n At any time If a voice file
+    #  is ready to play, the space bar will pause or play the audio file. Once the
+    #  audio has finished playing, press the r key to replay the audio file. \n
+    # Navigating the description of the graph via the use of hotkeys: To hear the
+    #  entire graph’s description, hit the ‘`’ (tilde / accent key)(quote left).
+    # If the graph has multiple lines, use the number keys one through eight (1 – 8)
+    #  to hear a single line’s description. \n If you are finished hearing a graph’s
+    # description, you may choose to select a new graph with the ‘u’ key, or a
+    # previously loaded graph with the ‘i’ key. If you are finished with the program,
+    #  you may hit the escape key to exit."
 
     if (os.path.isdir(program_path)):
         if playing_bool or stream.is_active():
@@ -575,7 +662,7 @@ def play_line_desc(line_number):
     if playing_bool or stream.is_active():
         stream.stop_stream()
     sound_file = str(line_number) + ".wav"
-    print(sound_file)
+    # print(sound_file)
     wf = wave.open(sound_file, 'r')
     print(sound_file, " loaded")
 
@@ -919,24 +1006,6 @@ def remove_line_desc_buttons(number_of_lines):
         line_1_button["state"] = "disabled"
     else:
         print(" Error: bad args on remove_line_desc_buttons() line buttons, must be integer between 1 and 8")
-
-
-# def disable_menu_buttons():
-#     global upload_button
-#     global play_entire_graph_desc_button
-#     global tutorial_button
-#     global load_previous_graph_button
-#     global pause_play_button
-#     global replay_button
-#     global exit_button
-
-#     upload_button["state"] = "disabled"
-#     play_entire_graph_desc_button["state"] = "disabled"
-#     tutorial_button["state"] = "disabled"
-#     load_previous_graph_button["state"] = "disabled"
-#     pause_play_button["state"] = "disabled"
-#     replay_button["state"] = "disabled"
-#     exit_button["state"] = "disabled"
 
 
 def exitAGR():
@@ -1717,23 +1786,21 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
     y_pixel_line = cropped_y_pixels_height - y_pixel_line
     datapoints = [[] for k in range(num_lines)]
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
+    top_y_axis_val = y_axis_values[0]
+    bottom_y_axis_val = y_axis_values[-1]
     pixels_divider = distance_from_top_to_x_axis / \
-        (float(y_axis_values[0]) - float(y_axis_values[-1]))
-
-    '''
-    for i in range(len(correct_final_colors)):
-        print('ya', correct_final_colors[i], "\n")
-    '''
+        (float(top_y_axis_val) - float(bottom_y_axis_val))
 
     print(len(new_datapoints), len(new_datapoints[0]))
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[0])):
-            print(correct_final_colors[j][i][0])
-            if correct_final_colors[j][i][0][1] == None:
+            y_axis_datapoint_pixel = correct_final_colors[j][i][0][1]
+            if y_axis_datapoint_pixel == None:
                 datapoints[j].append(None)
             else:
+
                 yAxis_values = round(
-                    ((cropped_y_pixels_height - float(correct_final_colors[j][i][0][1])) - y_pixel_line) / pixels_divider, 2)
+                    ((cropped_y_pixels_height - float(y_axis_datapoint_pixel)) - y_pixel_line) / pixels_divider, 2) + float(bottom_y_axis_val)
 
                 datapoints[j].append(yAxis_values)
     return datapoints
@@ -1817,7 +1884,7 @@ upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
 
 play_entire_graph_desc_button = tk.Button(master=background, text='Explain Graph',
-                                          width=19, command=lambda: _button_fn(path))
+                                          width=19, command=lambda: play_entire_graph_desc_fn(path))
 
 tutorial_button = tk.Button(master=background, text='Tutorial',
                             width=19, command=play_tutorial)
@@ -1908,3 +1975,11 @@ wf.close()
 
 # close PyAudio
 p.terminate()
+prog_bar.step(10)
+background.update()
+
+prog_bar.step(10)
+background.update()
+
+prog_bar.step(10)
+background.update()
