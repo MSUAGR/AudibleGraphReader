@@ -60,6 +60,7 @@ program_path = os.getcwd()
 sound_file = ''
 
 GUI = tk.Tk()
+GUI.iconbitmap('agr.ico')
 
 listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
@@ -559,7 +560,23 @@ def load_previous_graph_fn():
         prog_bar.place_forget()
         if play_entire_graph_desc_button["state"] == "disabled":
             play_entire_graph_desc_button["state"] = "normal"
+
         play_entire_graph_desc_fn(dir_path)
+
+        if pause_play_button["state"] == "disabled":
+            pause_play_button["state"] = "normal"
+        if replay_button["state"] == "disabled":
+            replay_button["state"] = "normal"
+        if upload_button["state"] == "disabled":
+            upload_button["state"] = "normal"
+        if play_entire_graph_desc_button["state"] == "disabled":
+            play_entire_graph_desc_button["state"] = "normal"
+        if tutorial_button["state"] == "disabled":
+            tutorial_button["state"] = "normal"
+        if load_previous_graph_button["state"] == "disabled":
+            load_previous_graph_button["state"] = "normal"
+        if exit_button["state"] == "disabled":
+            exit_button["state"] = "normal"
 
     elif (file_path == ""):
         # If empty string: dialog returns with no selection, ie user pressed cancel
@@ -1876,9 +1893,12 @@ background.pack(fill=tk.BOTH, expand=1)
 
 listbox.place(x=180, y=80)
 
-welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
+# welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
+#                         bg='white', fg='black', font=("Impact", 20))
+welcome_label = tk.Label(master=background, text='\n Image to be placed here **',
                          bg='white', fg='black', font=("Impact", 20))
 welcome_label.pack()
+
 
 upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
