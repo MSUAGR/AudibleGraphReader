@@ -236,7 +236,8 @@ def upload():
                 yAxis_title += y_axis_title[i] + ' '
 
             # X_AXIS_MIN = 0
-            J_GRAPH_TITLE = str(get_graph_title(cropped_img))
+            J_GRAPH_TITLE = str(get_graph_title(
+                (str(name_no_ext[0]) + '.png')))
             J_X_AXIS_TITLE = xAxis_title
             J_Y_AXIS_TITLE = yAxis_title
             J_X_AXIS_VALUES = x_axis_values
@@ -1847,17 +1848,17 @@ def get_y_axis(event, x, y, flags, param):
         cv2.destroyAllWindows()
 
 
-def get_graph_title(cropped_img):
-
-    cropped_y_pixels_height = cropped_img.shape[0]
-    cropped_x_pixels_width = cropped_img.shape[1]
-
-    cropped_img = cropped_img[0: round(
-        cropped_y_pixels_height*0.14), 0: cropped_x_pixels_width]
-    # Extract Text
+def get_graph_title(image_path):
     try:
-        image_text = pytesseract.image_to_string(cropped_img, lang='eng')
-
+        input_image = Image.open(str(image_path))
+        cropped_input_image = input_image.crop((
+            0, 0, (input_image.size[0]), (.14*input_image.size[1])))  # crop the image to top 1/3
+        # allow sharpness enhancement on cropped image
+        enh_sha_obj = ImageEnhance.Sharpness(
+            cropped_input_image.convert('RGB'))
+        image_sharped = enh_sha_obj.enhance(3.0)  # shapness factor of 3
+        # Extract Text
+        image_text = pytesseract.image_to_string(image_sharped, lang='eng')
         # Assign graph title
         graph_title = ""
         iterator = 0
