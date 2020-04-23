@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.17.2020
+# 4.23.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -64,7 +64,6 @@ GUI.iconbitmap('agr.ico')
 
 listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
-
 # Open blank Wav file
 wf = wave.open('blank.wav', 'r')
 
@@ -97,7 +96,7 @@ def upload():
     global sound_file
     global prog_bar
     global path
-    # To allow disabling butons
+    # To allow disabling buttons
     global upload_button
     global tutorial_button
     global pause_play_button
@@ -142,7 +141,7 @@ def upload():
 
             # Prevent extra input from the user
             upload_button["state"] = "disabled"
-            #play_entire_graph_desc_button["state"] = "disabled"
+            play_entire_graph_desc_button["state"] = "disabled"
             tutorial_button["state"] = "disabled"
             load_previous_graph_button["state"] = "disabled"
             pause_play_button["state"] = "disabled"
@@ -1845,38 +1844,33 @@ def get_graph_title(cropped_img):
     cropped_x_pixels_width = cropped_img.shape[1]
 
     cropped_img = cropped_img[0: round(
-        cropped_y_pixels_height*0.3), 0: cropped_x_pixels_width]
+        cropped_y_pixels_height*0.14), 0: cropped_x_pixels_width]
+    # Extract Text
+    try:
+        image_text = pytesseract.image_to_string(cropped_img, lang='eng')
 
-    image_to_text = pytesseract.image_to_string(cropped_img, lang='eng')
-
-    GraphTitle = []  # Will hold the chars of the tile
-    iter1 = 0  # set i to 0, to look at the first char of the title
-    current_char = ''  # set the current char to start the loop
-    numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '\n']
-
-    while True:
-        if image_to_text[iter1] in numbers:
-            iter1 += 1
-        else:
-            current_char = image_to_text[iter1]
-            break
-
-    while current_char != '\n':
-        GraphTitle.append(image_to_text[iter1])  # get the chars of the title
-        iter1 += 1
-        if iter1 < len(image_to_text):
-            current_char = image_to_text[iter1]
-        else:
-            break
-
-    # strips the '' from the array of title chars.
-    JoinedGraphTitle = ''.join(GraphTitle)
-    # print(JoinedGraphTitle)
-    return JoinedGraphTitle
+        # Assign graph title
+        graph_title = ""
+        iterator = 0
+        while iterator < len(image_text):  # and image_text[iterator] != '\n':
+            if image_text[iterator] == '\n':
+                if image_text[iterator+1] == '\n' or image_text[iterator+1] == ' ':
+                    iterator += len(image_text)
+                graph_title += ' '
+                iterator += 1
+            elif image_text[iterator] == '\'':
+                graph_title += ','
+                iterator += 1
+            else:
+                graph_title += image_text[iterator]
+                iterator += 1
+        return(graph_title)
+    except:
+        print("Error with input >> " + str(sys.exc_info()[1]))
+        return("No title found")
 
 
 ## End oF Functions ##
-
 GUI.option_add("*Button.Background", "light blue")
 GUI.option_add("*Button.Foreground", "black")
 GUI.option_add("*Button.Font", ("Impact", 10))
@@ -1995,11 +1989,3 @@ wf.close()
 
 # close PyAudio
 p.terminate()
-prog_bar.step(10)
-background.update()
-
-prog_bar.step(10)
-background.update()
-
-prog_bar.step(10)
-background.update()
