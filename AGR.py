@@ -14,7 +14,7 @@ import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageEnhance
 import pyaudio
 import wave
 import time
@@ -42,6 +42,15 @@ from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 import subprocess
 from tkinter.ttk import Progressbar
+import platform  # allows dev to check what os user is running
+
+user_platform = platform.platform()
+user_os = user_platform.split('.')[0]
+if 'Windows-10' in user_os:
+    print('Accepted OS')
+else:
+    print('Operating System not accepted!')
+    sys.exit()
 
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
 pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
