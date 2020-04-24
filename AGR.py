@@ -1897,12 +1897,9 @@ background.pack(fill=tk.BOTH, expand=1)
 
 listbox.place(x=180, y=80)
 
-# welcome_label = tk.Label(master=background, text='\nWelcome to the Audible Graph Reader',
-#                         bg='white', fg='black', font=("Impact", 20))
-welcome_label = tk.Label(master=background, text='\n Image to be placed here **',
-                         bg='white', fg='black', font=("Impact", 20))
-welcome_label.pack()
-
+logo_image = PhotoImage(file='AGRHorizontalLogo.png')
+logo_label = tk.Label(master=background, image=logo_image, bg='white')
+logo_label.pack()
 
 upload_button = tk.Button(master=background, text='Upload Graph',
                           width=19, command=upload)
