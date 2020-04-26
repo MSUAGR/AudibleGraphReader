@@ -14,6 +14,8 @@ import tkinter as tk
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter.ttk import Progressbar
+from tkinter import ttk
 from PIL import ImageTk, Image, ImageEnhance
 import pyaudio
 import wave
@@ -41,7 +43,6 @@ import math
 from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 import subprocess
-from tkinter.ttk import Progressbar
 import platform  # allows dev to check what os user is running
 
 user_platform = platform.platform()
@@ -71,7 +72,13 @@ sound_file = ''
 GUI = tk.Tk()
 GUI.iconbitmap('agr.ico')
 
-listbox = Listbox(GUI, height=2, width=100, selectmode='single')
+s = ttk.Style()
+s.theme_use('clam')
+s.configure("light_blue.Horizontal.TProgressbar",
+            foreground='white', background='#ADD8E6')
+
+
+#listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
 # Open blank Wav file
 wf = wave.open('blank.wav', 'r')
@@ -99,7 +106,7 @@ stream.stop_stream()
 
 
 def upload():
-    global listbox
+    # global listbox
     global load_previous_graph_button
     global play_entire_graph_desc_button
     global sound_file
@@ -119,11 +126,12 @@ def upload():
         remove_line_desc_buttons(8)
 
         prog_bar["value"] = 0
+        proc_label.place(x=85, y=60)
         prog_bar.place(x=30, y=90)
         prog_bar.step(10)
         background.update()
 
-        listbox.insert(END, file_path)
+        #listbox.insert(END, file_path)
 
         if (len(file_path) > 247):
             messagebox.showerror(
@@ -448,9 +456,11 @@ def upload():
 
             tts = gTTS(audText)
             tts.save('audTex.mp3')
+            print('saved audTex.mp3')
 
             prog_bar.step(10)
             background.update()
+            print('update bar')
 
             #print("creating everything.wav")
             src_mp3 = '"' + path + "audTex.mp3" + '"'
@@ -477,7 +487,7 @@ def upload():
             prog_bar.step(30)
             background.update()
 
-            time.sleep(2)
+            time.sleep(0.5)
             # would prefer to check if exist for wait... further testing needed
             # while(os.path.isfile(des_wav) == False):
             #     time.sleep(0.2)
@@ -510,6 +520,7 @@ def upload():
             if exit_button["state"] == "disabled":
                 exit_button["state"] = "normal"
 
+            proc_label.place_forget()
             prog_bar.place_forget()
 
             place_line_desc_buttons(num_lines)
@@ -1884,6 +1895,7 @@ def get_graph_title(image_path):
 GUI.option_add("*Button.Background", "light blue")
 GUI.option_add("*Button.Foreground", "black")
 GUI.option_add("*Button.Font", ("Impact", 10))
+GUI.option_add("*Label.Font", ("Impact", 13))
 
 GUI.title('Audible Graph Reader')
 GUI.geometry("900x700")
@@ -1895,7 +1907,7 @@ background.pack_propagate(0)
 # Expand the frame to fill the root window
 background.pack(fill=tk.BOTH, expand=1)
 
-listbox.place(x=180, y=80)
+#listbox.place(x=1, y=80)
 
 logo_image = PhotoImage(file='AGRHorizontalLogo.png')
 logo_label = tk.Label(master=background, image=logo_image, bg='white')
@@ -1955,8 +1967,10 @@ pause_play_button.place(x=30, y=360)
 replay_button.place(x=30, y=420)
 exit_button.place(x=30, y=640)
 
-prog_bar = Progressbar(background, orient=HORIZONTAL, length=200,
+prog_bar = Progressbar(background, style="light_blue.Horizontal.TProgressbar", orient=HORIZONTAL, length=200,
                        mode="determinate", takefocus=True, maximum=100)
+proc_label = Label(background, bg='white',
+                   text="Processing...")  # fg='#ADD8E6'
 
 
 replay_button["state"] = "disabled"
