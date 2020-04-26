@@ -44,6 +44,7 @@ from itertools import islice
 from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 import subprocess
 import platform  # allows dev to check what os user is running
+import threading
 
 user_platform = platform.platform()
 user_os = user_platform.split('.')[0]
@@ -78,7 +79,7 @@ s.configure("light_blue.Horizontal.TProgressbar",
             foreground='white', background='#ADD8E6')
 
 
-#listbox = Listbox(GUI, height=2, width=100, selectmode='single')
+# listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
 # Open blank Wav file
 wf = wave.open('blank.wav', 'r')
@@ -106,6 +107,11 @@ stream.stop_stream()
 
 
 def upload():
+    t1 = threading.Thread(target=t_upload, args=())
+    t1.start()
+
+
+def t_upload():
     # global listbox
     global load_previous_graph_button
     global play_entire_graph_desc_button
@@ -120,7 +126,7 @@ def upload():
     global exit_button
 
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
-                                           ("Image Files", ".png .jpg .gif .img")])
+        ("Image Files", ".png .jpg .gif .img")])
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
@@ -128,10 +134,10 @@ def upload():
         prog_bar["value"] = 0
         proc_label.place(x=85, y=60)
         prog_bar.place(x=30, y=90)
-        prog_bar.step(10)
+        prog_bar.step(10)  # 10%
         background.update()
 
-        #listbox.insert(END, file_path)
+        # listbox.insert(END, file_path)
 
         if (len(file_path) > 247):
             messagebox.showerror(
@@ -183,7 +189,7 @@ def upload():
 
             shutil.copy(file_path, path)
 
-            # change wd to path of desktop
+            # change wrk dir to path of desktop
             os.chdir(path)
 
             # check if img is png
@@ -211,7 +217,7 @@ def upload():
             x_axis_exists = True
             y_axis_exists = True
 
-            prog_bar.step(10)
+            prog_bar.step(10)  # 20%
             background.update()
 
             cropped_x_axis = cropped_img[round(
@@ -222,7 +228,7 @@ def upload():
 
             xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
 
-            prog_bar.step(10)
+            prog_bar.step(10)  # 30%
             background.update()
 
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
@@ -264,7 +270,7 @@ def upload():
             trend_line_dict, slope_strings, intersections_dict = getIntersections(
                 line_data, x_axis_values, num_lines, biggest_max)
 
-            prog_bar.step(10)
+            prog_bar.step(10)  # 40%
             background.update()
 
             x = {
@@ -306,7 +312,7 @@ def upload():
 
             f.close()
 
-            audText = ''
+            aud_text = ''
             line_1_text = ''
             line_2_text = ''
             line_3_text = ''
@@ -317,46 +323,46 @@ def upload():
             line_8_text = ''
 
             if J_GRAPH_TITLE == None:
-                audText += "The graph title could not be found. \n"
+                aud_text += "The graph title could not be found. \n"
             else:
-                audText += "The graph is titled " + J_GRAPH_TITLE + ". \n"
+                aud_text += "The graph is titled " + J_GRAPH_TITLE + ". \n"
 
             if J_X_AXIS_TITLE == None:
-                audText += "The x-axis title could not be found. \n"
+                aud_text += "The x-axis title could not be found. \n"
             else:
-                audText += "The x-axis is titled "
+                aud_text += "The x-axis is titled "
                 for i in range(len(x_axis_title)):
-                    audText += x_axis_title[i] + ' '
-                audText += ". \n"
+                    aud_text += x_axis_title[i] + ' '
+                aud_text += ". \n"
 
             if J_X_AXIS_VALUES == None:
-                audText += "The x-axis values could not be found. \n"
+                aud_text += "The x-axis values could not be found. \n"
             else:
-                audText += "The x-axis values are "
+                aud_text += "The x-axis values are "
                 for i in range(len(x_axis_values)):
-                    audText += x_axis_values[i] + ', '
-                audText += ". \n"
+                    aud_text += x_axis_values[i] + ', '
+                aud_text += ". \n"
 
             if J_Y_AXIS_TITLE == None:
-                audText += "The y-axis title could not be found. \n"
+                aud_text += "The y-axis title could not be found. \n"
             else:
-                audText += "The y-axis is titled "
+                aud_text += "The y-axis is titled "
                 for i in range(len(y_axis_title)):
-                    audText += y_axis_title[i] + ' '
-                audText += ". \n"
+                    aud_text += y_axis_title[i] + ' '
+                aud_text += ". \n"
 
             if J_Y_AXIS_VALUES == None:
-                audText += "The y-axis values could not be found. \n"
+                aud_text += "The y-axis values could not be found. \n"
             else:
-                audText += "The y-axis values are "
+                aud_text += "The y-axis values are "
                 for i in range(len(y_axis_values)):
-                    audText += y_axis_values[i] + ', '
-                audText += ". \n"
+                    aud_text += y_axis_values[i] + ', '
+                aud_text += ". \n"
 
             if J_NUM_LINES == None:
-                audText += "The number of lines on the graph could not be found. \n"
+                aud_text += "The number of lines on the graph could not be found. \n"
             else:
-                audText += "There are " + J_NUM_LINES + " lines on the graph. \n"
+                aud_text += "There are " + J_NUM_LINES + " lines on the graph. \n"
 
             lines_vals = line_data.items()
             for key, values in lines_vals:
@@ -428,23 +434,23 @@ def upload():
                 tts = gTTS(lineString)
                 tts.save(str(key) + '.mp3')
 
-                audText += lineString  # adds line information to complete text file
+                aud_text += lineString  # adds line information to complete text file
 
             aud_text_file_name = new_file_name + '.txt'
 
-            prog_bar.step(10)
+            prog_bar.step(10)  # 50%
             background.update()
 
             try:
                 f = open(aud_text_file_name, "w+")  # create read/write
                 print(" info: Successfully created text file")
                 try:
-                    f.write(audText)
+                    f.write(aud_text)
                     print(" info: Successfully wrote text data")
                     try:
                         os.chmod(aud_text_file_name, S_IREAD | S_IRGRP |
                                  S_IROTH)  # lock file to read-only
-                        print(" info: Succesfully write locked text file")
+                        print(" info: Successfully write locked text file")
                     except:
                         print(" Error: Unable to lock file to read only")
                 except:
@@ -454,15 +460,15 @@ def upload():
             except:
                 print(" Error: Unable to create file")
 
-            tts = gTTS(audText)
+            tts = gTTS(aud_text)
             tts.save('audTex.mp3')
             print('saved audTex.mp3')
 
-            prog_bar.step(10)
+            prog_bar.step(10)  # 60%
             background.update()
             print('update bar')
 
-            #print("creating everything.wav")
+            # print("creating everything.wav")
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
             ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
@@ -473,21 +479,21 @@ def upload():
 
             # Convert each line mp3 to wav..
             for key, values in lines_vals:
-                #print("creating " + str(key) + ".wav")
+                # print("creating " + str(key) + ".wav")
                 src_mp3 = '"' + path + str(key) + ".mp3" + '"'
-                #print("srcmp3: " + src_mp3)
+                # print("srcmp3: " + src_mp3)
                 dest_wav = ' "' + path + str(key) + ".wav" + '"'
-                #print("destwav: " + dest_wav)
+                # print("destwav: " + dest_wav)
                 ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
                 my_command = ffmpeg_path + " -i " + src_mp3 + dest_wav
                 proc = subprocess.Popen(
                     my_command, shell=key, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 print("created " + str(key) + ".wav")
 
-            prog_bar.step(30)
+            prog_bar.step(30)  # 90%
             background.update()
 
-            time.sleep(0.5)
+            time.sleep(2)
             # would prefer to check if exist for wait... further testing needed
             # while(os.path.isfile(des_wav) == False):
             #     time.sleep(0.2)
@@ -1907,7 +1913,7 @@ background.pack_propagate(0)
 # Expand the frame to fill the root window
 background.pack(fill=tk.BOTH, expand=1)
 
-#listbox.place(x=1, y=80)
+# listbox.place(x=1, y=80)
 
 logo_image = PhotoImage(file='AGRHorizontalLogo.png')
 logo_label = tk.Label(master=background, image=logo_image, bg='white')
