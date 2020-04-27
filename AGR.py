@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.23.2020
+# 4.26.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -196,6 +196,8 @@ def t_upload():
             if og_file_name[-4:] in {'.png'}:
                 img = Image.open(og_file_name)
                 img = cv2.imread(og_file_name)  # 'eimg.png')
+                name_no_ext = og_file_name.split('.')
+
             else:
                 name_no_ext = og_file_name.split('.')
                 # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
@@ -371,7 +373,7 @@ def t_upload():
                         j_array = []
                         if len(intersections_dict) > 0:
                             for j in range(len(intersections_dict[key])):
-                                if intersections_dict[key][j][1] >= 1 and intersections_dict[key][j][1] <= 2 and intersections_dict[key][j][1] != None:
+                                if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= 1 and intersections_dict[key][j][1] <= 2:
                                     j_array.append(j)
                         lineString = "Line " + str(key) + " starts at the x value of " + str(x_axis_values[i]) + " and the y value of " + str(values[i][1]) + " and " \
                             + slope_strings[key][i] + " " + \
@@ -390,7 +392,7 @@ def t_upload():
                         j_array = []
                         if len(intersections_dict) > 0:
                             for j in range(len(intersections_dict[key])):
-                                if intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2) and intersections_dict[key][j][1] != None:
+                                if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2):
                                     j_array.append(j)
                         lineString += "Line " + \
                             str(key) + " then " + \
@@ -411,7 +413,7 @@ def t_upload():
                         j_array = []
                         if len(intersections_dict) > 0:
                             for j in range(len(intersections_dict[key])):
-                                if intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2) and intersections_dict[key][j][1] != None:
+                                if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2):
                                     j_array.append(j)
                         lineString += "Finally, line " + \
                             str(key) + " " + \
@@ -1832,7 +1834,7 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
     top_y_axis_val = y_axis_values[0]
     bottom_y_axis_val = y_axis_values[-1]
     pixels_divider = distance_from_top_to_x_axis / \
-        (float(top_y_axis_val) - float(bottom_y_axis_val))
+        (float(top_y_axis_val) - 0)
 
     print(len(new_datapoints), len(new_datapoints[0]))
     for i in range(len(new_datapoints)):
