@@ -1906,19 +1906,19 @@ def locate_tesseract():
     global err_count
     err_count += 1
     if err_count >= 5:
-        ans = messagebox.askyesno(
-            message='It appears we are having trouble locating tesseract.exe \n Would you like to exit the program?')
+        ans = messagebox.askyesno(title='Exit?',
+                                  message='It appears we are having trouble locating tesseract.exe. \n Would you like to exit the program?')
         if ans == True:
             sys.exit()
-            # exitAGR()
     if os.path.exists(program_path+'\\config.txt'):
         print(" info: tesser location defined")
         config_filestream = open("config.txt", "r")
         tesser_location = config_filestream.readline()
         # print(tesser_location)
         config_filestream.close()
-        if 'tesseract.exe' in tesser_location:
-            return tesser_location
+        if os.path.exists(tesser_location):
+            if 'tesseract.exe' in tesser_location:
+                return tesser_location
         else:
             os.remove("config.txt")
             return(locate_tesseract())
@@ -1930,7 +1930,7 @@ def locate_tesseract():
             ("Executable File", ".exe")])
         if tesser_location == '':
             messagebox.showerror(title='Error locating tesseract.exe',
-                                 message='ERROR: Unable to retrieve location of tesseract')
+                                 message='ERROR: Unable to retrieve location of tesseract.')
             print(" ERROR: Unable to retrieve location of tesseract")
             return(locate_tesseract())
         elif 'tesseract.exe' in tesser_location:
