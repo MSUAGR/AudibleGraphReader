@@ -44,6 +44,7 @@ from stat import S_IREAD, S_IRGRP, S_IROTH  # allows os for read only
 import subprocess
 import platform  # allows dev to check what os user is running
 import threading
+from statistics import mean
 
 user_platform = platform.platform()
 user_os = user_platform.split('.')[0]
@@ -355,6 +356,11 @@ def t_upload():
 
             lines_vals = line_data.items()
             for key, values in lines_vals:
+                # lines_vals = [(xy), (xy), ....]
+                ys = []
+                for y in range(len(values)):
+                    ys.append(values[y][1])
+                m = best_fit_slope(ys)
                 for i in range(len(values) - 1):
                     if i == 0:
                         j_array = []
@@ -362,7 +368,9 @@ def t_upload():
                             for j in range(len(intersections_dict[key])):
                                 if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= 1 and intersections_dict[key][j][1] <= 2:
                                     j_array.append(j)
-                        lineString = "Line " + str(key) + " starts at the x value of " + str(x_axis_values[i]) + " and the y value of " + str(values[i][1]) + " and " \
+                        lineString = "The general trend of line " + \
+                            str(key) + " has a slope of " + str(m) + ".\n"
+                        lineString += "Line " + str(key) + " starts at the x value of " + str(x_axis_values[i]) + " and the y value of " + str(values[i][1]) + " and " \
                             + slope_strings[key][i] + " " + \
                             str(values[i + 1][1]) + " with the x value of " + \
                             str(x_axis_values[i + 1])
@@ -635,7 +643,7 @@ def play_tutorial():
     global sound_file
     global program_path
 
-    # For reference, here is the tut string
+    # For reference, here is the tut string:
     # my_string = "At any time while using the Audible Graph Reader,
     # you can press the ‘h’ key to load this tutorial. \n To upload a graph,
     #  select the 'Upload Graph' button or use the ‘u’ key. Only images of
@@ -831,7 +839,7 @@ def key(event):
         else:
             print(" Error: Open prev graph not enabled")
     elif event.keycode == 192:
-        # On '``' key press (aka tilde key)
+        # On '`' key press (aka tilde key)
         if play_entire_graph_desc_button["state"] == "normal":
             play_entire_graph_desc_fn(path)
         else:
@@ -1871,6 +1879,22 @@ def get_graph_title(image_path):
         return("No title found")
 
 
+def best_fit_slope(ys):
+    ys = [x for x in ys if x != None]
+    xs = []
+    if len(ys) != 0:
+        for i in range(len(ys)):
+            xs.append(i+1)
+    x = np.array(xs)
+    y = np.array(ys)
+    m, b = np.polyfit(x, y, 1)
+    # print(m, b)
+    return(round(m, 2))
+
+    # TODO
+    # Insert to line desc using y val array
+
+
 def locate_tesseract():
     global err_count
     err_count += 1
@@ -2014,6 +2038,7 @@ GUI.resizable(False, False)
 err_count = 0
 pytesseract.pytesseract.tesseract_cmd = locate_tesseract()
 print(" info: tesseract location set: ", pytesseract.pytesseract.tesseract_cmd)
+
 
 GUI.mainloop()
 
