@@ -54,8 +54,10 @@ else:
     print(' ERROR: Operating System not accepted!')
     sys.exit()
 
+
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
-pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
+
 
 # Global
 x_axis_pos = []  # image1 (98, 395), (543, 395)
@@ -65,6 +67,7 @@ global img
 global file_path
 global path
 global program_path
+global err_count
 
 program_path = os.getcwd()
 
@@ -1899,6 +1902,50 @@ def get_graph_title(image_path):
         return("No title found")
 
 
+def locate_tesseract():
+    global err_count
+    err_count += 1
+    if err_count >= 5:
+        ans = messagebox.askyesno(title='Exit?',
+                                  message='It appears we are having trouble locating tesseract.exe. \n Would you like to exit the program?')
+        if ans == True:
+            sys.exit()
+    if os.path.exists(program_path+'\\config.txt'):
+        print(" info: tesser location defined")
+        config_filestream = open("config.txt", "r")
+        tesser_location = config_filestream.readline()
+        # print(tesser_location)
+        config_filestream.close()
+        if os.path.exists(tesser_location):
+            if 'tesseract.exe' in tesser_location:
+                return tesser_location
+        else:
+            os.remove("config.txt")
+            return(locate_tesseract())
+    else:
+        print(" info: tesser location unknown")
+        messagebox.showwarning(title="Welcome to the Audible Graph Reader",
+                               message="Firstly, we must locate your tesseract executable. \n Please locate the executable after pressing ok.")
+        tesser_location = filedialog.askopenfilename(title="Point me to your tesseract.exe", filetypes=[
+            ("Executable File", ".exe")])
+        if tesser_location == '':
+            messagebox.showerror(title='Error locating tesseract.exe',
+                                 message='ERROR: Unable to retrieve location of tesseract.')
+            print(" ERROR: Unable to retrieve location of tesseract")
+            return(locate_tesseract())
+        elif 'tesseract.exe' in tesser_location:
+            tesser_location = os.path.normpath(tesser_location)
+            config_filestream = open("config.txt", "w+")
+            config_filestream.write(str(tesser_location))
+            config_filestream.close()
+            return(tesser_location)
+        else:
+            messagebox.showerror(title='Error Locating tesseract.exe',
+                                 message='ERROR: Unable to retrieve location of tesseract \n Please try again')
+            print(" ERROR: Unable to retrieve location of tesseract")
+            return(locate_tesseract())
+
+
 ## End oF Functions ##
 GUI.option_add("*Button.Background", "light blue")
 GUI.option_add("*Button.Foreground", "black")
@@ -2007,6 +2054,10 @@ pause_play_button["state"] = "disabled"
 
 GUI.bind("<Key>", key)  # calls key (function above) on Keyboard input
 GUI.resizable(False, False)
+
+err_count = 0
+pytesseract.pytesseract.tesseract_cmd = locate_tesseract()
+print(" info: tesseract location set: ", pytesseract.pytesseract.tesseract_cmd)
 
 GUI.mainloop()
 
