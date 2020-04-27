@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.26.2020
+# 4.27.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -24,7 +24,6 @@ import os
 from gtts import gTTS
 import cv2
 import sys
-# from sys import argv
 from datetime import datetime
 import os
 import glob
@@ -55,13 +54,9 @@ else:
     sys.exit()
 
 
-# pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
-# pytesseract.pytesseract.tesseract_cmd = r"C:\\Users\\Think\\AppData\\Local\\Tesseract-OCR\\tesseract.exe"  # Nate
-
-
 # Global
-x_axis_pos = []  # image1 (98, 395), (543, 395)
-y_axis_pos = []  # image1 (95, 393), (97, 85)
+x_axis_pos = []
+y_axis_pos = []
 playing_bool = False
 global img
 global file_path
@@ -81,8 +76,6 @@ s.theme_use('clam')
 s.configure("light_blue.Horizontal.TProgressbar",
             foreground='white', background='#ADD8E6')
 
-
-# listbox = Listbox(GUI, height=2, width=100, selectmode='single')
 
 # Open blank Wav file
 wf = wave.open('blank.wav', 'r')
@@ -115,7 +108,6 @@ def upload():
 
 
 def t_upload():
-    # global listbox
     global load_previous_graph_button
     global play_entire_graph_desc_button
     global sound_file
@@ -139,8 +131,6 @@ def t_upload():
         prog_bar.place(x=30, y=90)
         prog_bar.step(10)  # 10%
         background.update()
-
-        # listbox.insert(END, file_path)
 
         if (len(file_path) > 247):
             messagebox.showerror(
@@ -198,7 +188,7 @@ def t_upload():
             # check if img is png
             if og_file_name[-4:] in {'.png'}:
                 img = Image.open(og_file_name)
-                img = cv2.imread(og_file_name)  # 'eimg.png')
+                img = cv2.imread(og_file_name)
                 name_no_ext = og_file_name.split('.')
 
             else:
@@ -206,10 +196,7 @@ def t_upload():
                 # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
                 img = Image.open(og_file_name).save(
                     path + name_no_ext[0] + '.png')
-                img = cv2.imread(name_no_ext[0] + '.png')  # 'eimg.png')
-
-            # img = ImageEnhance.Sharpness(img.convert('RGB'))
-            # img = img.enhance(5.0).save('eimg.png')
+                img = cv2.imread(name_no_ext[0] + '.png')
 
             img_size = img.shape
             print(img_size)
@@ -270,8 +257,6 @@ def t_upload():
             J_LEGEND_DATA = "toBeDetermined"  # dict
 
             # pass dict of points
-            # points = dict({1: [(1, 300), (2, 125), (3, 200), (4, 400), (5, 378)], 2: [
-            #              (1, 200), (2, 429), (3, 400), (4, 300), (5, 500)], 3: [(1, 0), (2, 100), (3, 250), (4, 450), (5, 440)]})
             trend_line_dict, slope_strings, intersections_dict = getIntersections(
                 line_data, x_axis_values, num_lines, biggest_max)
 
@@ -293,7 +278,6 @@ def t_upload():
             }
 
             try:
-                # f = open(path + og_file_name + ".json", 'w')  # Create .json file
                 f = open(path + "graph.json", 'w')  # Create .json file
             except:
                 print(" Error: JSON file creation failed")
@@ -302,8 +286,6 @@ def t_upload():
 
             try:
                 jsonData = json.dumps(x,  indent=2)  # with newline
-                # jsonData = json.dumps(x)   # without newline
-                # print(jsonData)
                 print(" info: Successfully dumpt json")
             except:
                 print(" Error: Unable to format json")
@@ -369,7 +351,7 @@ def t_upload():
             else:
                 aud_text += "There are " + J_NUM_LINES + " lines on the graph. \n"
 
-            print()
+            print()  # Formatting in console...
 
             lines_vals = line_data.items()
             for key, values in lines_vals:
@@ -515,6 +497,7 @@ def t_upload():
             image.image = openImg
             image.place(x=160, y=120)
 
+            print()  # Console formatting
             print(file_path + " has been opened in the preview window")
 
             if pause_play_button["state"] == "disabled":
@@ -554,9 +537,6 @@ def load_previous_graph_fn():
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
             ("Image Files", ".png .jpg .gif .img")])
 
-    # C:/Users/Think/Desktop/AGR/Graphs/image4.gif.1587179044/image4.png
-    print("file_path: " + file_path)
-
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
         prog_bar.place(x=30, y=90)
@@ -579,7 +559,7 @@ def load_previous_graph_fn():
 
         # load json find num lines, load each aud file
         dir_path = os.path.dirname(os.path.realpath(file_path))
-        print("dirPath: " + dir_path)
+        # print("dirPath: " + dir_path)
 
         os.chdir(dir_path)
         count = 0
@@ -751,18 +731,16 @@ def replay():
         print(" Error: Sound file does not exist ")
 
 
-def play_pause():  # playing_bool):
+def play_pause():
     global playing_bool
     global stream
     if stream.is_stopped():
-        print('play pressed')
-        # listbox.insert(END, "Playing Played")
+        print(' info: play pressed')
         stream.start_stream()
         playing_bool = True
         return False
     elif stream.is_active():
-        print('pause pressed')
-        # listbox.insert(END, "Playing Paused")
+        print(' info: pause pressed')
         stream.stop_stream()
         playing_bool = False
         return False
@@ -778,17 +756,7 @@ def key(event):
     global line_6_button
     global line_7_button
     global line_8_button
-
     global path
-
-    # pretty print keys
-    # key_char = event.char
-    # key_symb = event.keysym
-    # key_code = event.keycode
-    # print("Pressed ", key_char, " ", key_symb, " ", key_code)
-
-    # play_pause_button.place_forget()
-    # play_pause_button.place(x=50, y=60)
 
     if event.keysym == 'space':
         if pause_play_button["state"] == "normal":
@@ -1058,8 +1026,9 @@ def remove_line_desc_buttons(number_of_lines):
 
 
 def exitAGR():
-
+    print(" Goodbye")
     GUI.destroy()
+
 
 ## Begin functions outside of GUI ##
 
@@ -1962,8 +1931,6 @@ background.pack_propagate(0)
 # Expand the frame to fill the root window
 background.pack(fill=tk.BOTH, expand=1)
 
-# listbox.place(x=1, y=80)
-
 logo_image = PhotoImage(file='AGRHorizontalLogo.png')
 logo_label = tk.Label(master=background, image=logo_image, bg='white')
 logo_label.pack()
@@ -2026,6 +1993,9 @@ prog_bar = Progressbar(background, style="light_blue.Horizontal.TProgressbar", o
                        mode="determinate", takefocus=True, maximum=100)
 proc_label = Label(background, bg='white',
                    text="Processing...")  # fg='#ADD8E6'
+copy_write_label = Label(background, bg='white',
+                         text="Copyright 2020 Missouri State University", font=('Helvetica', 10))
+copy_write_label.place(x=330, y=675)
 
 
 replay_button["state"] = "disabled"
@@ -2038,20 +2008,6 @@ else:
 
 pause_play_button["state"] = "disabled"
 
-# TODO
-# Verify file path on dialog close , prevent bad/ blank
-# Add functionality to grab proper files (.wav .json ...) from folder on old graph load
-# enable buttons on load wav:
-#   pause_play_button
-#   replay_button
-#   play_entire_graph_desc_button
-
-# remove_line_desc_buttons(8)
-
-# And place buttons using num_lines
-# place_line_desc_buttons(num_lines)
-# remove_line_desc_buttons(8)
-
 GUI.bind("<Key>", key)  # calls key (function above) on Keyboard input
 GUI.resizable(False, False)
 
@@ -2061,8 +2017,7 @@ print(" info: tesseract location set: ", pytesseract.pytesseract.tesseract_cmd)
 
 GUI.mainloop()
 
-
-# stop stream
+# stop and close stream
 stream.stop_stream()
 stream.close()
 wf.close()
