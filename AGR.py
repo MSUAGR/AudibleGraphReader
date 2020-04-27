@@ -49,9 +49,9 @@ import threading
 user_platform = platform.platform()
 user_os = user_platform.split('.')[0]
 if 'Windows-10' in user_os:
-    print('Accepted OS')
+    print(' info: Accepted OS')
 else:
-    print('Operating System not accepted!')
+    print(' ERROR: Operating System not accepted!')
     sys.exit()
 
 # pytesseract.pytesseract.tesseract_cmd = r'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'  # Josh/Alex
@@ -366,6 +366,8 @@ def t_upload():
             else:
                 aud_text += "There are " + J_NUM_LINES + " lines on the graph. \n"
 
+            print()
+
             lines_vals = line_data.items()
             for key, values in lines_vals:
                 for i in range(len(values) - 1):
@@ -464,11 +466,10 @@ def t_upload():
 
             tts = gTTS(aud_text)
             tts.save('audTex.mp3')
-            print('saved audTex.mp3')
+            print(' info: Saved audTex.mp3')
 
             prog_bar.step(10)  # 60%
             background.update()
-            print('update bar')
 
             # print("creating everything.wav")
             src_mp3 = '"' + path + "audTex.mp3" + '"'
@@ -477,7 +478,7 @@ def t_upload():
             my_command = ffmpeg_path + " -i " + src_mp3 + des_wav
             proc = subprocess.Popen(
                 my_command, shell=1, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("created everything.wav")
+            print(" info: Created everything.wav")
 
             # Convert each line mp3 to wav..
             for key, values in lines_vals:
@@ -490,7 +491,7 @@ def t_upload():
                 my_command = ffmpeg_path + " -i " + src_mp3 + dest_wav
                 proc = subprocess.Popen(
                     my_command, shell=key, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                print("created " + str(key) + ".wav")
+                print(" info: Created " + str(key) + ".wav")
 
             prog_bar.step(30)  # 90%
             background.update()
@@ -1832,7 +1833,7 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
     datapoints = [[] for k in range(num_lines)]
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
     top_y_axis_val = y_axis_values[0]
-    bottom_y_axis_val = y_axis_values[-1]
+
     pixels_divider = distance_from_top_to_x_axis / \
         (float(top_y_axis_val) - 0)
 
@@ -1843,9 +1844,8 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
             if y_axis_datapoint_pixel == None:
                 datapoints[j].append(None)
             else:
-
                 yAxis_values = round(
-                    ((cropped_y_pixels_height - float(y_axis_datapoint_pixel)) - y_pixel_line) / pixels_divider, 2) + float(bottom_y_axis_val)
+                    ((cropped_y_pixels_height - float(y_axis_datapoint_pixel)) - y_pixel_line) / pixels_divider, 2)
 
                 datapoints[j].append(yAxis_values)
     return datapoints
