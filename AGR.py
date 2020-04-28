@@ -54,7 +54,6 @@ else:
     print(' ERROR: Operating System not accepted!')
     sys.exit()
 
-
 # Global
 x_axis_pos = []
 y_axis_pos = []
@@ -76,7 +75,6 @@ s = ttk.Style()
 s.theme_use('clam')
 s.configure("light_blue.Horizontal.TProgressbar",
             foreground='white', background='#ADD8E6')
-
 
 # Open blank Wav file
 wf = wave.open('blank.wav', 'r')
@@ -200,13 +198,13 @@ def t_upload():
                 img = cv2.imread(name_no_ext[0] + '.png')
 
             img_size = img.shape
-            print(img_size)
+            print(' info: Image Size: ', img_size)
             y_pixels_height = img.shape[0]
             x_pixels_width = img.shape[1]
             cropped_img = img[10: y_pixels_height-10, 10: x_pixels_width-10]
             cropped_y_pixels_height = img.shape[0]
             cropped_x_pixels_width = img.shape[1]
-            print(cropped_img.shape)
+            # print(cropped_img.shape)
             x_axis_exists = True
             y_axis_exists = True
 
@@ -618,7 +616,7 @@ def play_entire_graph_desc_fn(path):
         sound_file = os.path.normpath(sound_file)
 
         wf = wave.open(sound_file, 'rb')
-        print(sound_file, " loaded")
+        print(' info: ', sound_file, " loaded")
 
         stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                         channels=wf.getnchannels(),
@@ -669,10 +667,9 @@ def play_tutorial():
         # os.chdir(path)
         sound_file = program_path + r'\tutorial.wav'
         sound_file = os.path.normpath(sound_file)
-        print("tut: " + program_path)
 
         wf = wave.open(sound_file, 'rb')
-        print(sound_file, " loaded")
+        print(' info: ', sound_file, " loaded")
 
         stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                         channels=wf.getnchannels(),
@@ -682,7 +679,7 @@ def play_tutorial():
         return stream
 
     else:
-        print("err: bad path for tutorial.wav file")
+        print(" ERROR: bad path for tutorial.wav file")
         return False
 
 
@@ -698,7 +695,7 @@ def play_line_desc(line_number):
     sound_file = str(line_number) + ".wav"
     # print(sound_file)
     wf = wave.open(sound_file, 'r')
-    print(sound_file, " loaded")
+    print(' info: ', sound_file, " loaded")
 
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                     channels=wf.getnchannels(),
@@ -722,7 +719,7 @@ def replay():
 
         try:
             wf = wave.open(sound_file, 'r')
-            print(sound_file, " loaded")
+            print(' info: ', sound_file, " loaded")
 
             stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                             channels=wf.getnchannels(),
@@ -1031,7 +1028,7 @@ def remove_line_desc_buttons(number_of_lines):
 
 
 def exitAGR():
-    print(" Goodbye")
+    print(" Terminating...")
     GUI.destroy()
 
 
@@ -1336,7 +1333,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
 
     origin = (x_pixel_line, y_pixel_line)
 
-    print("origin: ", origin)  # , 'aaaaa')
+    print(" info: origin: ", origin)  # , 'aaaaa')
 
     # if the longest line is bigger than half the width of the page it is the x-axis
     if longest_yline_size > 0.5*cropped_x_pixels_width:
@@ -1633,8 +1630,8 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                 max_position[i].append((y))
         min_points[i+1] = (min(min_position[i]))
         max_points[i+1] = (max(max_position[i]))
-    print(min_points)
-    print(max_points)
+    # print(min_points)
+    # print(max_points)
 
     '''
     print("The points where colors exist are at x, y pixel: ", new_datapoints)
