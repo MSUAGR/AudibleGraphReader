@@ -122,7 +122,7 @@ def t_upload():
     global exit_button
 
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
-        ("Image Files", ".png .jpg .gif .img")])
+        ("Image Files", ".png .jpg .gif .img .jpeg")])
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
@@ -355,6 +355,7 @@ def t_upload():
             print()  # Formatting in console...
 
             lines_vals = line_data.items()
+            line_string = 'No line data'
             for key, values in lines_vals:
                 # lines_vals = [(xy), (xy), ....]
                 ys = []
@@ -368,40 +369,40 @@ def t_upload():
                             for j in range(len(intersections_dict[key])):
                                 if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= 1 and intersections_dict[key][j][1] <= 2:
                                     j_array.append(j)
-                        lineString = "The general trend of line " + \
+                        line_string = "The general trend of line " + \
                             str(key) + " has a slope of " + str(m) + ".\n"
-                        lineString += "Line " + str(key) + " starts at the x value of " + str(x_axis_values[i]) + " and the y value of " + str(values[i][1]) + " and " \
+                        line_string += "Line " + str(key) + " starts at the x value of " + str(x_axis_values[i]) + " and the y value of " + str(values[i][1]) + " and " \
                             + slope_strings[key][i] + " " + \
                             str(values[i + 1][1]) + " with the x value of " + \
                             str(x_axis_values[i + 1])
                         if len(j_array) == 0:
-                            lineString += ".\n"
+                            line_string += ".\n"
                         else:
-                            lineString += ", intersecting "
+                            line_string += ", intersecting "
                             for j in j_array:
-                                lineString += "with line " + \
+                                line_string += "with line " + \
                                     str(intersections_dict[key][j][0]) + " at " + str(
                                         intersections_dict[key][j][2]) + " between " + str(x_axis_values[i]) + " and " + str(x_axis_values[i + 1]) + " and "
-                            lineString += ".\n"
+                            line_string += ".\n"
                     elif i > 0 and i < len(values) - 2:
                         j_array = []
                         if len(intersections_dict) > 0:
                             for j in range(len(intersections_dict[key])):
                                 if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2):
                                     j_array.append(j)
-                        lineString += "Line " + \
+                        line_string += "Line " + \
                             str(key) + " then " + \
                             slope_strings[key][i] + " " + \
                             str(values[i + 1][1]) + " at the x value of " + \
                             str(x_axis_values[i + 1])
                         if len(j_array) == 0:
-                            lineString += ".\n"
+                            line_string += ".\n"
                         else:
                             for j in j_array:
-                                lineString += "and intersects with line " + \
+                                line_string += "and intersects with line " + \
                                     str(intersections_dict[key][j][0]) + " at " + str(
                                         intersections_dict[key][j][2]) + " "
-                            lineString += " between " + \
+                            line_string += " between " + \
                                 str(x_axis_values[i]) + " and " + \
                                 str(x_axis_values[i + 1]) + ".\n"
                     else:
@@ -410,28 +411,28 @@ def t_upload():
                             for j in range(len(intersections_dict[key])):
                                 if intersections_dict[key][j][1] != None and intersections_dict[key][j][1] >= (i + 1) and intersections_dict[key][j][1] <= (i + 2):
                                     j_array.append(j)
-                        lineString += "Finally, line " + \
+                        line_string += "Finally, line " + \
                             str(key) + " " + \
                             slope_strings[key][i] + " " +\
                             str(values[i + 1][1]) + " " + \
                             " at the x value of " + str(x_axis_values[i + 1])
                         if len(j_array) == 0:
-                            lineString += ".\n"
+                            line_string += ".\n"
                         else:
                             for j in j_array:
-                                lineString += "and intersects with line " + \
+                                line_string += "and intersects with line " + \
                                     str(intersections_dict[key][j][0]) + " at " + str(
                                         intersections_dict[key][j][2]) + " "
-                            lineString += " between " + \
+                            line_string += " between " + \
                                 str(x_axis_values[i]) + " and " + \
                                 str(x_axis_values[i + 1]) + ".\n"
 
                 # create .wav file for each line
-                print(lineString)
-                tts = gTTS(lineString)
+                print(line_string)
+                tts = gTTS(line_string)
                 tts.save(str(key) + '.mp3')
 
-                aud_text += lineString  # adds line information to complete text file
+                aud_text += line_string  # adds line information to complete text file
 
             aud_text_file_name = new_file_name + '.txt'
 
@@ -543,7 +544,7 @@ def load_previous_graph_fn():
     AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
-            ("Image Files", ".png .jpg .gif .img")])
+            ("Image Files", ".png .jpg .gif .img .jpeg")])
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
@@ -812,7 +813,7 @@ def key(event):
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == 'h':
-        if tutorial_button["state"] == "noraml":
+        if tutorial_button["state"] == "normal":
             play_tutorial()
         else:
             print(" Error: Tutorial button not enabled")
@@ -1940,6 +1941,7 @@ def locate_tesseract():
 
 
 ## End oF Functions ##
+
 GUI.option_add("*Button.Background", "light blue")
 GUI.option_add("*Button.Foreground", "black")
 GUI.option_add("*Button.Font", ("Impact", 10))
