@@ -230,8 +230,8 @@ def t_upload():
             y_axis_values, biggest_max, y_axis_title = get_ydata(
                 cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
 
-            line_data, x_axis_values, num_lines, x_axis_title = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
-                                                                          x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
+            line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
+                                                                                            x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
 
             # ASSIGN VARIABLES
             for i in range(len(x_axis_title)):
@@ -251,11 +251,8 @@ def t_upload():
             J_Y_AXIS_VALUES = y_axis_values
             J_ORIGIN = str(origin)
             J_NUM_LINES = str(num_lines)
-
-            # SET CORRECT VALS HERE
-            J_FOUND_COLORS = "toBeDetermined"
-            J_DATA_POINTS = "toBeDetermined"  # xcoords
-            J_LEGEND_DATA = "toBeDetermined"  # dict
+            J_FOUND_COLORS = line_colors_dict
+            J_DATA_POINTS = line_data
 
             # pass dict of points
             trend_line_dict, slope_strings, intersections_dict = getIntersections(
@@ -274,8 +271,7 @@ def t_upload():
                 "num_lines": J_NUM_LINES,
                 "found_colors": J_FOUND_COLORS,  # LIST OF RGB
                 "data_points": J_DATA_POINTS,  # LIST OF TUPLES
-                "origin": J_ORIGIN,  # TUPLE
-                "legend_data": J_LEGEND_DATA  # DICT (line names, line colors)
+                "origin": J_ORIGIN  # TUPLE
             }
 
             try:
@@ -1550,15 +1546,15 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     line = 1
     for i in range(num_lines):
         if len(new_datapoints_colors[0]) == num_lines and new_datapoints_colors[0][i][0] != None:
-            line_colors_dict[line] = new_datapoints_colors[0][i]
+            line_colors_dict[line] = new_datapoints_colors[0][i].tolist()
             line += 1
         elif len(new_datapoints_colors[1]) == num_lines and new_datapoints_colors[1][i][0] != None:
-            line_colors_dict[line] = new_datapoints_colors[1][i]
+            line_colors_dict[line] = new_datapoints_colors[1][i].tolist()
             line += 1
         elif len(new_datapoints_colors[2]) == num_lines and new_datapoints_colors[2][i][0] != None:
-            line_colors_dict[line] = new_datapoints_colors[2][i]
+            line_colors_dict[line] = new_datapoints_colors[2][i].tolist()
             line += 1
-    print('A', line_colors_dict)
+    print('Line Colours: ', line_colors_dict)  # LINE COLORS
 
     # if there are less values in the new_datapoints list than there are lines, append "None" to the list to show the
     # system could not get any data
@@ -1654,7 +1650,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     # cv2.imshow('image', x_axis_img)
     # cv2.waitKey(0)
 
-    return line_data, x_axis_values, num_lines, x_axis_title
+    return line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict
 
 
 def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
