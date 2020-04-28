@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.27.2020
+# 4.28.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
