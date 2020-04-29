@@ -52,6 +52,8 @@ if 'Windows-10' in user_os:
     print(' info: Accepted OS')
 else:
     print(' ERROR: Operating System not accepted!')
+    print(' press enter key to exit...')
+    input()
     sys.exit()
 
 # Global
