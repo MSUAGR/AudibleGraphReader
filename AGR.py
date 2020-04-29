@@ -125,12 +125,6 @@ def t_upload():
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
 
-        prog_bar["value"] = 0
-        proc_label.place(x=85, y=60)
-        prog_bar.place(x=30, y=90)
-        prog_bar.step(10)  # 10%
-        background.update()
-
         if (len(file_path) > 247):
             messagebox.showerror(
                 title="AGR:Error", message="File path is too long.")
@@ -154,6 +148,11 @@ def t_upload():
                 print(" Error: File is too large, must be less than 1 MB")
                 return False
 
+            prog_bar["value"] = 0
+            proc_label.place(x=85, y=60)
+            prog_bar.place(x=30, y=90)
+            prog_bar.step(10)  # 10%
+            background.update()
             # Prevent extra input from the user
             upload_button["state"] = "disabled"
             play_entire_graph_desc_button["state"] = "disabled"
