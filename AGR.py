@@ -1643,10 +1643,15 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                 min_position[i].append((y))
             if y != None:
                 max_position[i].append((y))
-        min_points[i+1] = (min(min_position[i]))
-        max_points[i+1] = (max(max_position[i]))
-    # print(min_points)
-    # print(max_points)
+        min_val = min(min_position[i])
+        max_val = max(max_position[i])
+        for n in range(len(line_positions[i])):
+            if line_positions[i][n][1] == min_val:
+                min_points[i+1] = (line_positions[i][n])
+            elif line_positions[i][n][1] == max_val:
+                max_points[i+1] = (line_positions[i][n])
+    print("Minimum points: ", min_points)
+    print("Maximum points: ", max_points)
 
     '''
     print("The points where colors exist are at x, y pixel: ", new_datapoints)
