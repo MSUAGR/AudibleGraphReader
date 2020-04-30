@@ -120,7 +120,8 @@ def t_upload():
     global pause_play_button
     global replay_button
     global exit_button
-
+    global x_axis_pos
+    global y_axis_pos
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
         ("Image Files", ".png .jpg .gif .img .jpeg")])
 
@@ -523,7 +524,8 @@ def t_upload():
             prog_bar.place_forget()
 
             place_line_desc_buttons(num_lines)
-
+            x_axis_pos = []
+            y_axis_pos = []
             play_entire_graph_desc_fn(path)
 
     elif (file_path == ""):
