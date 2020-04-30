@@ -124,7 +124,16 @@ def t_upload():
     global y_axis_pos
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
         ("Image Files", ".png .jpg .gif .img .jpeg")])
-
+    try:
+        img = Image.open(file_path)
+        img.verify()
+        img = Image.open(file_path)
+    except (IOError, SyntaxError) as e:
+        print('Bad files: ', file_path)
+        messagebox.showerror(
+                title="AGR:Error", message="File is corrupted.")
+        return True
+    
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
 
@@ -188,13 +197,16 @@ def t_upload():
 
             # check if img is png
             if og_file_name[-4:] in {'.png'}:
+               
                 img = Image.open(og_file_name)
                 img = cv2.imread(og_file_name)
                 name_no_ext = og_file_name.split('.')
-
+                    
             else:
                 name_no_ext = og_file_name.split('.')
                 # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
+                img = Image.open(og_file_name).save(
+                    path + name_no_ext[0] + '.png')
                 img = Image.open(og_file_name).save(
                     path + name_no_ext[0] + '.png')
                 img = cv2.imread(name_no_ext[0] + '.png')
@@ -503,8 +515,8 @@ def t_upload():
             # while(os.path.isfile(des_wav) == False):
             #     time.sleep(0.2)
             #     print("waiting")
-
             img = Image.open(file_path)
+        
             if img.size[0] > 690 or img.size[1] > 545:
                 img = img.resize((690, 545), Image.ANTIALIAS)
             openImg = ImageTk.PhotoImage(img)
