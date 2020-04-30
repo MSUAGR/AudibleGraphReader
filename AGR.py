@@ -21,7 +21,7 @@ import pyaudio
 import wave
 import time
 import os
-from gtts import gTTS
+#from gtts import gTTS
 import cv2
 import sys
 from datetime import datetime
@@ -425,8 +425,14 @@ def t_upload():
 
                 # create .wav file for each line
                 print(line_string)
-                tts = gTTS(line_string)
-                tts.save(str(key) + '.mp3')
+                try:
+                    tts = gTTS(line_string)
+                    tts.save(str(key) + '.mp3')
+                except:
+                    messagebox.showerror(title='Error Creating Audible Line Description',
+                                         message='ERROR: Unable to create individual line string audible narration files... \n Please ensure that gTTS is installed.')
+                    print(
+                        " ERROR: Unable to create individual line string audible narration files")
 
                 aud_text += line_string  # adds line information to complete text file
 
@@ -454,9 +460,15 @@ def t_upload():
             except:
                 print(" Error: Unable to create file")
 
-            tts = gTTS(aud_text)
-            tts.save('audTex.mp3')
-            print(' info: Saved audTex.mp3')
+            try:
+                tts = gTTS(aud_text)
+                tts.save('audTex.mp3')
+                print(' info: Saved audTex.mp3')
+            except:
+                messagebox.showerror(title='Error Creating Audible Sound Description',
+                                     message='ERROR: Unable to create complete audible narration file... \n Please ensure that gTTS is installed.')
+                print(
+                    " ERROR: Unable to create complete audible narration file")
 
             prog_bar.step(10)  # 60%
             background.update()
