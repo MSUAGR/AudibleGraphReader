@@ -21,7 +21,7 @@ import pyaudio
 import wave
 import time
 import os
-#from gtts import gTTS
+from gtts import gTTS
 import cv2
 import sys
 from datetime import datetime
