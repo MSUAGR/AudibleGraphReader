@@ -132,7 +132,7 @@ def t_upload():
         print('Bad files: ', file_path)
         messagebox.showerror(
                 title="AGR:Error", message="File is corrupted.")
-        return True
+        return -1
     
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
@@ -159,12 +159,13 @@ def t_upload():
                     title="AGR:Error", message="File is too large.")
                 print(" Error: File is too large, must be less than 1 MB")
                 return False
-
+            
             prog_bar["value"] = 0
             proc_label.place(x=85, y=60)
             prog_bar.place(x=30, y=90)
             prog_bar.step(10)  # 10%
             background.update()
+            
             # Prevent extra input from the user
             upload_button["state"] = "disabled"
             play_entire_graph_desc_button["state"] = "disabled"
@@ -173,7 +174,7 @@ def t_upload():
             pause_play_button["state"] = "disabled"
             replay_button["state"] = "disabled"
             exit_button["state"] = "disabled"
-
+            
             now = datetime.now()
             timestamp = str(round(datetime.timestamp(now)))
 
@@ -194,7 +195,7 @@ def t_upload():
 
             # change wrk dir to path of desktop
             os.chdir(path)
-
+            
             # check if img is png
             if og_file_name[-4:] in {'.png'}:
                
@@ -235,16 +236,59 @@ def t_upload():
 
             prog_bar.step(10)  # 30%
             background.update()
+            
+            img = Image.open(file_path)
+        
+            if img.size[0] > 690 or img.size[1] > 545:
+                img = img.resize((690, 545), Image.ANTIALIAS)
+            openImg = ImageTk.PhotoImage(img)
+            image = tk.Label(master=background, width=690,
+                             height=505, image=openImg)
 
+            image.image = openImg
+            image.place(x=160, y=120)
+            
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
                 cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
-
-            y_axis_values, biggest_max, y_axis_title = get_ydata(
-                cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
-
-            line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
+            try:
+                y_axis_values, biggest_max, y_axis_title = get_ydata(
+                    cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
+            except (IOError, SyntaxError, IndexError) as e:
+                print('The y-axis data could not be found')
+                messagebox.showerror(
+                        title="AGR:Error", message="The y-axis data could not be found.")
+                os.chdir('..')
+                shutil.rmtree(path)
+                print("Bad image directory deleted")
+                proc_label.place_forget()
+                prog_bar.place_forget()
+                image.place_forget()
+                upload_button["state"] = "normal"
+                tutorial_button["state"] = "normal"
+                load_previous_graph_button["state"] = "normal"
+                exit_button["state"] = "normal"
+                return -1
+            
+            try:
+                line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
                                                                                             x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
-
+            except (IOError, SyntaxError, IndexError) as e:
+                print("The x-axis data could not be found.")
+                messagebox.showerror(
+                title="AGR:Error", message="The x-axis data could not be found.")
+                os.chdir('..')
+                shutil.rmtree(path)
+                print("Bad image directory deleted")
+                proc_label.place_forget()
+                prog_bar.place_forget()
+                image.place_forget()
+                upload_button["state"] = "normal"
+                tutorial_button["state"] = "normal"
+                load_previous_graph_button["state"] = "normal"
+                exit_button["state"] = "normal"
+                return -1
+                
+            
             # ASSIGN VARIABLES
             for i in range(len(x_axis_title)):
                 xAxis_title = ''
@@ -318,12 +362,12 @@ def t_upload():
             line_7_text = ''
             line_8_text = ''
 
-            if J_GRAPH_TITLE == None:
+            if J_GRAPH_TITLE == 'None':
                 aud_text += "The graph title could not be found. \n"
             else:
                 aud_text += "The graph is titled " + J_GRAPH_TITLE + ". \n"
 
-            if J_X_AXIS_TITLE == None:
+            if J_X_AXIS_TITLE == 'None':
                 aud_text += "The x-axis title could not be found. \n"
             else:
                 aud_text += "The x-axis is titled "
@@ -339,7 +383,7 @@ def t_upload():
                     aud_text += x_axis_values[i] + ', '
                 aud_text += ". \n"
 
-            if J_Y_AXIS_TITLE == None:
+            if J_Y_AXIS_TITLE == 'None':
                 aud_text += "The y-axis title could not be found. \n"
             else:
                 aud_text += "The y-axis is titled "
@@ -515,16 +559,7 @@ def t_upload():
             # while(os.path.isfile(des_wav) == False):
             #     time.sleep(0.2)
             #     print("waiting")
-            img = Image.open(file_path)
-        
-            if img.size[0] > 690 or img.size[1] > 545:
-                img = img.resize((690, 545), Image.ANTIALIAS)
-            openImg = ImageTk.PhotoImage(img)
-            image = tk.Label(master=background, width=690,
-                             height=505, image=openImg)
-
-            image.image = openImg
-            image.place(x=160, y=120)
+            
 
             print()  # Console formatting
             print(file_path + " has been opened in the preview window")
@@ -1519,6 +1554,8 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
         if i != '':
             x_axis_title.append(i)
 
+    if len(x_axis_title) == 0:
+        x_axis_title.append('None')
     # the points where the x axis values appear on the x axis should be this many pixels
     # key_x_axis_values = round(longest_line_size / len(x_axis_values))
     # print("Every ", key_x_axis_values, " pixels there is a key point")
@@ -1737,6 +1774,8 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
         if i != ''and i.isalpha():
             y_axis_title.append(i)
 
+    if len(y_axis_title) == 0:
+        y_axis_title.append('None')
     print("y-axis values", y_axis_values)
     print("y-axis title", y_axis_title)
 
@@ -1902,7 +1941,8 @@ def get_graph_title(image_path):
         return(graph_title)
     except:
         print("Error with input >> " + str(sys.exc_info()[1]))
-        return("No title found")
+        graph_title = 'None'
+        return graph_title
 
 
 def best_fit_slope(ys):
