@@ -108,6 +108,10 @@ def upload():
     t1.start()
 
 
+def wait():
+    messagebox.showinfo(
+                title="Waiting", message="The system is taking longer than expected")
+    
 def t_upload():
     global load_previous_graph_button
     global play_entire_graph_desc_button
@@ -122,13 +126,18 @@ def t_upload():
     global exit_button
     global x_axis_pos
     global y_axis_pos
+    
+    x_axis_pos = []
+    y_axis_pos = []
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
         ("Image Files", ".png .jpg .gif .img .jpeg")])
     try:
         img = Image.open(file_path)
         img.verify()
         img = Image.open(file_path)
-    except (IOError, SyntaxError) as e:
+        
+            
+    except:
         print('Bad files: ', file_path)
         messagebox.showerror(
                 title="AGR:Error", message="File is corrupted.")
@@ -250,10 +259,13 @@ def t_upload():
             
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
                 cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
+            t2 = threading.Timer(10, wait)
+            t2.start()
             try:
                 y_axis_values, biggest_max, y_axis_title = get_ydata(
                     cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
-            except (IOError, SyntaxError, IndexError) as e:
+            except:
+                t2.cancel()
                 print('The y-axis data could not be found')
                 messagebox.showerror(
                         title="AGR:Error", message="The y-axis data could not be found.")
@@ -267,12 +279,14 @@ def t_upload():
                 tutorial_button["state"] = "normal"
                 load_previous_graph_button["state"] = "normal"
                 exit_button["state"] = "normal"
+                
                 return -1
             
             try:
                 line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
                                                                                             x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
-            except (IOError, SyntaxError, IndexError) as e:
+            except:
+                t2.cancel()
                 print("The x-axis data could not be found.")
                 messagebox.showerror(
                 title="AGR:Error", message="The x-axis data could not be found.")
@@ -286,6 +300,7 @@ def t_upload():
                 tutorial_button["state"] = "normal"
                 load_previous_graph_button["state"] = "normal"
                 exit_button["state"] = "normal"
+                
                 return -1
                 
             
@@ -1584,8 +1599,12 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
    # for each line the coordinates and the colors at those coordinates are saved in new_datapoints and new_datapoints_colors
     for i in range(len(x_axis_value_medians)):
         x_axis_points = x_axis_value_medians[i]
-        res, col, top_of_graph, fin_col = get_line_positions(
-            cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points)
+        try:
+            res, col, top_of_graph, fin_col = get_line_positions(
+                cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points)
+        except:
+            print('Error')
+            return
         new_datapoints.append(res)
         new_datapoints_colors.append(col)
         final_colors.append(fin_col)
@@ -1598,9 +1617,12 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     for i in range(len(new_datapoints)):
         for j in range(len(new_datapoints[i])):
             most_common_list.append(len(new_datapoints[i]))
-    most_common = max(set(most_common_list), key=most_common_list.count)
-    num_lines = most_common
+    if len(most_common_list) > 0:
+        most_common = max(set(most_common_list), key=most_common_list.count)
+        num_lines = most_common
 
+    if num_lines > 8:
+        raise Exception("Too many lines")
     # colors are being stored in this dict. If the colors at the first x-axis value are not equal to the actual number
     # of lines, eg if a datapoint is covered by another, check several lines
     line_colors_dict = {}
@@ -1615,6 +1637,23 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
         elif len(new_datapoints_colors[2]) == num_lines and new_datapoints_colors[2][i][0] != None:
             line_colors_dict[line] = new_datapoints_colors[2][i].tolist()
             line += 1
+    
+    colors = list(line_colors_dict.values())
+    buffer = 10
+    for i in range(len(colors)):
+        num_colors = len(colors)
+        print('lines lol', colors)
+        for j in range(num_colors):
+            if j == i:
+                pass
+            else:
+                if colors[i][0] in range(colors[j][0]-buffer, colors[j][0]+buffer) \
+                    and colors[i][1] in range(colors[j][1]-buffer, colors[j][1]+buffer) \
+                    and colors[i][2] in range(colors[j][2]-buffer, colors[j][2]+buffer):
+                        raise Exception("You cannot have multiple lines with the same color")
+                else:
+                    print('no no no')
+                
     print('Line Colours: ', line_colors_dict)  # LINE COLORS
 
     # if there are less values in the new_datapoints list than there are lines, append "None" to the list to show the
