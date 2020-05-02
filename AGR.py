@@ -45,6 +45,9 @@ import subprocess
 import platform  # allows dev to check what os user is running
 import threading
 from statistics import mean
+from langdetect import detect_langs
+from langdetect import DetectorFactory
+DetectorFactory.seed = 0
 
 user_platform = platform.platform()
 user_os = user_platform.split('.')[0]
@@ -143,6 +146,8 @@ def t_upload():
                 title="AGR:Error", message="File is corrupted.")
         return -1
     
+    
+
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
 
@@ -302,8 +307,10 @@ def t_upload():
                 exit_button["state"] = "normal"
                 
                 return -1
-                
             
+            
+            
+
             # ASSIGN VARIABLES
             for i in range(len(x_axis_title)):
                 xAxis_title = ''
@@ -324,6 +331,52 @@ def t_upload():
             J_NUM_LINES = str(num_lines)
             J_FOUND_COLORS = line_colors_dict
             J_DATA_POINTS = line_data
+
+            all_text = J_X_AXIS_TITLE + J_Y_AXIS_TITLE + J_GRAPH_TITLE
+            
+            try:
+                # custom_config = r'-l grc+tha+eng --psm 6'
+                # my_string = pytesseract.image_to_string(img, config=custom_config)
+                # pytesseract.image_to_string(img)#, lang='eng')
+                lang_list = detect_langs(all_text) # Language object Output: image4.gif langlist =  [en:0.5714262601246318, it:0.4285717316776206]
+                
+                lang_found = False
+                
+                #print('mystr = ', my_string)
+                print('langlist = ', lang_list)
+
+                for item in lang_list:
+                    print(item.lang)
+                    print(item.prob)
+
+                    if item.lang == 'en' and item.prob > 0.5:
+                        lang_found = True
+                        
+                if lang_found == False:
+                    print("BAD INPUT: Language other than english is dominant language")
+                    raise Exception("Language is not English")
+                    # throw error & exit
+                    # messagebox.showerror(title="AGR:Error", message="English not the dominant language.")
+                else:
+                    print(" info: Found english")
+            except:
+                t2.cancel()
+                print("The most prominent language is not English.")
+                messagebox.showerror(
+                title="AGR:Error", message="The most prominent language is not English.")
+                os.chdir('..')
+                shutil.rmtree(path)
+                print("Bad image directory deleted")
+                proc_label.place_forget()
+                prog_bar.place_forget()
+                image.place_forget()
+                upload_button["state"] = "normal"
+                tutorial_button["state"] = "normal"
+                load_previous_graph_button["state"] = "normal"
+                exit_button["state"] = "normal"
+                
+                return -1
+
 
             # pass dict of points
             trend_line_dict, slope_strings, intersections_dict = getIntersections(
