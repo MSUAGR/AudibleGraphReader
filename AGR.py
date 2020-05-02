@@ -25,13 +25,11 @@ from gtts import gTTS
 import cv2
 import sys
 from datetime import datetime
-import os
 import glob
 import json
 import ntpath  # To interact with filepath
 import shutil  # High level file operations (cp img)
 import numpy as np
-from PIL import Image, ImageEnhance
 from collections import OrderedDict
 from operator import itemgetter
 import pytesseract
