@@ -68,12 +68,9 @@ global program_path
 global err_count
 
 program_path = os.getcwd()
-
 sound_file = ''
-
 GUI = tk.Tk()
 GUI.iconbitmap('agr.ico')
-
 s = ttk.Style()
 s.theme_use('clam')
 s.configure("light_blue.Horizontal.TProgressbar",
@@ -101,7 +98,7 @@ stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
 # Stop stream from playing initially
 stream.stop_stream()
 
-## Begin Functions ##
+## Begin GUI Functions ##
 
 
 def upload():
@@ -111,8 +108,9 @@ def upload():
 
 def wait():
     messagebox.showinfo(
-                title="Waiting", message="The system is taking longer than expected")
-    
+        title="Waiting", message="The system is taking longer than expected")
+
+
 def t_upload():
     global load_previous_graph_button
     global play_entire_graph_desc_button
@@ -127,27 +125,30 @@ def t_upload():
     global exit_button
     global x_axis_pos
     global y_axis_pos
-    
+    global playing_bool
+
+    if stream.is_active():
+        print(' info: stream paused for new upload')
+        stream.stop_stream()
+        playing_bool = False
+
     x_axis_pos = []
     y_axis_pos = []
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
         ("Image Files", ".png .jpg .gif .img .jpeg")])
-    try:
-        img = Image.open(file_path)
-        img.verify()
-        img = Image.open(file_path)
-        
-            
-    except:
-        print('Bad files: ', file_path)
-        messagebox.showerror(
-                title="AGR:Error", message="File is corrupted.")
-        return -1
-    
-    
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
+
+        try:
+            img = Image.open(file_path)
+            img.verify()
+            img = Image.open(file_path)
+        except:
+            print('Bad files: ', file_path)
+            messagebox.showerror(
+                title="AGR:Error", message="File is corrupted.")
+            return -1
 
         if (len(file_path) > 247):
             messagebox.showerror(
@@ -156,7 +157,6 @@ def t_upload():
         else:
             file_name, file_extension = os.path.splitext(file_path)
             og_file_name = path_leaf(file_path)
-
             regex = '<>:"|?*'
             for char in regex:
                 if char in og_file_name:
@@ -171,13 +171,13 @@ def t_upload():
                     title="AGR:Error", message="File is too large.")
                 print(" Error: File is too large, must be less than 1 MB")
                 return False
-            
+
             prog_bar["value"] = 0
             proc_label.place(x=85, y=60)
             prog_bar.place(x=30, y=90)
             prog_bar.step(10)  # 10%
             background.update()
-            
+
             # Prevent extra input from the user
             upload_button["state"] = "disabled"
             play_entire_graph_desc_button["state"] = "disabled"
@@ -186,7 +186,7 @@ def t_upload():
             pause_play_button["state"] = "disabled"
             replay_button["state"] = "disabled"
             exit_button["state"] = "disabled"
-            
+
             now = datetime.now()
             timestamp = str(round(datetime.timestamp(now)))
 
@@ -207,14 +207,13 @@ def t_upload():
 
             # change wrk dir to path of desktop
             os.chdir(path)
-            
+
             # check if img is png
             if og_file_name[-4:] in {'.png'}:
-               
+
                 img = Image.open(og_file_name)
                 img = cv2.imread(og_file_name)
                 name_no_ext = og_file_name.split('.')
-                    
             else:
                 name_no_ext = og_file_name.split('.')
                 # print("nameNoext: ", name_no_ext[0])  # nameNoext:  image4
@@ -248,18 +247,16 @@ def t_upload():
 
             prog_bar.step(10)  # 30%
             background.update()
-            
+
             img = Image.open(file_path)
-        
             if img.size[0] > 690 or img.size[1] > 545:
                 img = img.resize((690, 545), Image.ANTIALIAS)
             openImg = ImageTk.PhotoImage(img)
             image = tk.Label(master=background, width=690,
                              height=505, image=openImg)
-
             image.image = openImg
             image.place(x=160, y=120)
-            
+
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
                 cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
             t2 = threading.Timer(10, wait)
@@ -271,7 +268,7 @@ def t_upload():
                 t2.cancel()
                 print('The y-axis data could not be found')
                 messagebox.showerror(
-                        title="AGR:Error", message="The y-axis data could not be found.")
+                    title="AGR:Error", message="The y-axis data could not be found.")
                 os.chdir('..')
                 shutil.rmtree(path)
                 print("Bad image directory deleted")
@@ -282,17 +279,16 @@ def t_upload():
                 tutorial_button["state"] = "normal"
                 load_previous_graph_button["state"] = "normal"
                 exit_button["state"] = "normal"
-                
                 return -1
-            
+
             try:
                 line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
-                                                                                            x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
+                                                                                                x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
             except:
                 t2.cancel()
                 print("The x-axis data could not be found.")
                 messagebox.showerror(
-                title="AGR:Error", message="The x-axis data could not be found.")
+                    title="AGR:Error", message="The x-axis data could not be found.")
                 os.chdir('..')
                 shutil.rmtree(path)
                 print("Bad image directory deleted")
@@ -303,11 +299,7 @@ def t_upload():
                 tutorial_button["state"] = "normal"
                 load_previous_graph_button["state"] = "normal"
                 exit_button["state"] = "normal"
-                
                 return -1
-            
-            
-            
 
             # ASSIGN VARIABLES
             for i in range(len(x_axis_title)):
@@ -331,40 +323,35 @@ def t_upload():
             J_DATA_POINTS = line_data
 
             all_text = J_X_AXIS_TITLE + J_Y_AXIS_TITLE + J_GRAPH_TITLE
-            
+
             try:
                 # custom_config = r'-l grc+tha+eng --psm 6'
                 # my_string = pytesseract.image_to_string(img, config=custom_config)
                 # pytesseract.image_to_string(img)#, lang='eng')
-                lang_list = detect_langs(all_text) # Language object Output: image4.gif langlist =  [en:0.5714262601246318, it:0.4285717316776206]
-                
+                # Language object Output: image4.gif langlist =  [en:0.5714262601246318, it:0.4285717316776206]
+                lang_list = detect_langs(all_text)
                 lang_found = False
-                
-                #print('mystr = ', my_string)
-                print('langlist = ', lang_list)
+                # print('langlist = ', lang_list)
 
                 for item in lang_list:
-                    print(item.lang)
-                    print(item.prob)
-
+                    # print(item.lang)
+                    # print(item.prob)
                     if item.lang == 'en' and item.prob > 0.5:
                         lang_found = True
-                        
+
                 if lang_found == False:
                     print("BAD INPUT: Language other than english is dominant language")
                     raise Exception("Language is not English")
-                    # throw error & exit
-                    # messagebox.showerror(title="AGR:Error", message="English not the dominant language.")
                 else:
-                    print(" info: Found english")
+                    print(" info: Found English text")
             except:
                 t2.cancel()
                 print("The most prominent language is not English.")
                 messagebox.showerror(
-                title="AGR:Error", message="The most prominent language is not English.")
+                    title="AGR:Error", message="The most prominent language is not English.")
                 os.chdir('..')
                 shutil.rmtree(path)
-                print("Bad image directory deleted")
+                print(" info: Bad image directory deleted")
                 proc_label.place_forget()
                 prog_bar.place_forget()
                 image.place_forget()
@@ -372,9 +359,7 @@ def t_upload():
                 tutorial_button["state"] = "normal"
                 load_previous_graph_button["state"] = "normal"
                 exit_button["state"] = "normal"
-                
                 return -1
-
 
             # pass dict of points
             trend_line_dict, slope_strings, intersections_dict = getIntersections(
@@ -578,11 +563,11 @@ def t_upload():
                 except:
                     print(" Error: Unable to write text data")
                 f.close
-
             except:
                 print(" Error: Unable to create file")
 
             try:
+                #print('attempting to gTTS')
                 tts = gTTS(aud_text)
                 tts.save('audTex.mp3')
                 print(' info: Saved audTex.mp3')
@@ -595,7 +580,7 @@ def t_upload():
             prog_bar.step(10)  # 60%
             background.update()
 
-            # print("creating everything.wav")
+            #print(' info: creating everything.wav')
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
             ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
@@ -606,7 +591,7 @@ def t_upload():
 
             # Convert each line mp3 to wav..
             for key, values in lines_vals:
-                # print("creating " + str(key) + ".wav")
+                #print("creating " + str(key) + ".wav")
                 src_mp3 = '"' + path + str(key) + ".mp3" + '"'
                 # print("srcmp3: " + src_mp3)
                 dest_wav = ' "' + path + str(key) + ".wav" + '"'
@@ -619,16 +604,6 @@ def t_upload():
 
             prog_bar.step(30)  # 90%
             background.update()
-
-            time.sleep(2)
-            # would prefer to check if exist for wait... further testing needed
-            # while(os.path.isfile(des_wav) == False):
-            #     time.sleep(0.2)
-            #     print("waiting")
-            
-
-            print()  # Console formatting
-            print(file_path + " has been opened in the preview window")
 
             if pause_play_button["state"] == "disabled":
                 pause_play_button["state"] = "normal"
@@ -645,17 +620,26 @@ def t_upload():
             if exit_button["state"] == "disabled":
                 exit_button["state"] = "normal"
 
+            everything_path = path + 'everything.wav'
+            everything_path = os.path.normpath(everything_path)
+
+            # Check if ffmpeg is done processing the everything.mp3 -> .wav
+            # Wait if file does not exist
+            while(os.path.isfile(everything_path) == False):
+                time.sleep(0.05)
+
             proc_label.place_forget()
             prog_bar.place_forget()
 
             place_line_desc_buttons(num_lines)
             x_axis_pos = []
             y_axis_pos = []
+
             play_entire_graph_desc_fn(path)
 
     elif (file_path == ""):
         # If empty string: dialog returns with no selection, ie user pressed cancel
-        print("User cancelled upload image")
+        print(" info: User cancelled upload image")
     else:
         print("error with file submission")
 
@@ -663,6 +647,13 @@ def t_upload():
 def load_previous_graph_fn():
     global file_path
     global play_entire_graph_desc_button
+    global playing_bool
+
+    if stream.is_active():
+        print(' info: stream paused for load previous')
+        stream.stop_stream()
+        playing_bool = False
+
     AGR_FOLDER = os.path.normpath(os.path.expanduser("~/Desktop/AGR/Graphs/"))
     file_path = filedialog.askopenfilename(
         initialdir=AGR_FOLDER, title="Select Previous Graph Image", filetypes=[
@@ -670,12 +661,6 @@ def load_previous_graph_fn():
 
     if os.path.isfile(file_path):
         remove_line_desc_buttons(8)
-        prog_bar.place(x=30, y=90)
-        prog_bar["value"] = 0
-
-        prog_bar.step(10)
-        background.update()
-
         img = Image.open(file_path)
         if img.size[0] > 690 or img.size[1] > 545:
             img = img.resize((690, 545), Image.ANTIALIAS)
@@ -700,7 +685,6 @@ def load_previous_graph_fn():
         prev_num_lines = count - 1
 
         place_line_desc_buttons(prev_num_lines)
-        prog_bar.place_forget()
         if play_entire_graph_desc_button["state"] == "disabled":
             play_entire_graph_desc_button["state"] = "normal"
 
@@ -723,7 +707,7 @@ def load_previous_graph_fn():
 
     elif (file_path == ""):
         # If empty string: dialog returns with no selection, ie user pressed cancel
-        print("User cancelled upload previous image")
+        print(" info: User cancelled upload previous image")
     else:
         print("error with file submission")
 
@@ -1688,7 +1672,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
         elif len(new_datapoints_colors[2]) == num_lines and new_datapoints_colors[2][i][0] != None:
             line_colors_dict[line] = new_datapoints_colors[2][i].tolist()
             line += 1
-    
+
     colors = list(line_colors_dict.values())
     buffer = 10
     for i in range(len(colors)):
@@ -1699,12 +1683,13 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                 pass
             else:
                 if colors[i][0] in range(colors[j][0]-buffer, colors[j][0]+buffer) \
-                    and colors[i][1] in range(colors[j][1]-buffer, colors[j][1]+buffer) \
-                    and colors[i][2] in range(colors[j][2]-buffer, colors[j][2]+buffer):
-                        raise Exception("You cannot have multiple lines with the same color")
+                        and colors[i][1] in range(colors[j][1]-buffer, colors[j][1]+buffer) \
+                        and colors[i][2] in range(colors[j][2]-buffer, colors[j][2]+buffer):
+                    raise Exception(
+                        "You cannot have multiple lines with the same color")
                 else:
                     print('no no no')
-                
+
     print('Line Colours: ', line_colors_dict)  # LINE COLORS
 
     # if there are less values in the new_datapoints list than there are lines, append "None" to the list to show the
