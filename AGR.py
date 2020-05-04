@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 4.28.2020
+# 5.4.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -43,6 +43,8 @@ import subprocess
 import platform  # allows dev to check what os user is running
 import threading
 from statistics import mean
+from tones import SINE_WAVE
+from tones.mixer import Mixer
 from langdetect import detect_langs
 from langdetect import DetectorFactory
 DetectorFactory.seed = 0
@@ -60,12 +62,15 @@ else:
 # Global
 x_axis_pos = []
 y_axis_pos = []
+ref_points = []
 playing_bool = False
 global img
 global file_path
 global path
 global program_path
 global err_count
+global draw_axes_img
+global draw_axes_img_redo
 
 program_path = os.getcwd()
 sound_file = ''
@@ -126,6 +131,8 @@ def t_upload():
     global x_axis_pos
     global y_axis_pos
     global playing_bool
+    global draw_axes_img
+    global draw_axes_img_redo
 
     if stream.is_active():
         print(' info: stream paused for new upload')
@@ -213,6 +220,8 @@ def t_upload():
 
                 img = Image.open(og_file_name)
                 img = cv2.imread(og_file_name)
+                draw_axes_img = img.copy()
+                draw_axes_img_redo = img.copy()
                 name_no_ext = og_file_name.split('.')
             else:
                 name_no_ext = og_file_name.split('.')
@@ -222,12 +231,15 @@ def t_upload():
                 img = Image.open(og_file_name).save(
                     path + name_no_ext[0] + '.png')
                 img = cv2.imread(name_no_ext[0] + '.png')
+                draw_axes_img = img.copy()
+                draw_axes_img_redo = img.copy()
 
             img_size = img.shape
             print(' info: Image Size: ', img_size)
             y_pixels_height = img.shape[0]
             x_pixels_width = img.shape[1]
-            cropped_img = img[10: y_pixels_height-10, 10: x_pixels_width-10]
+            # [10: y_pixels_height-10, 10: x_pixels_width-10]
+            cropped_img = img
             cropped_y_pixels_height = img.shape[0]
             cropped_x_pixels_width = img.shape[1]
             # print(cropped_img.shape)
@@ -259,10 +271,10 @@ def t_upload():
 
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
                 cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
-            t2 = threading.Timer(10, wait)
+            t2 = threading.Timer(30, wait)
             t2.start()
             try:
-                y_axis_values, biggest_max, y_axis_title = get_ydata(
+                y_axis_values, biggest_max, smallest_min, y_axis_title = get_ydata(
                     cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
             except:
                 t2.cancel()
@@ -457,7 +469,190 @@ def t_upload():
 
             print()  # Formatting in console...
 
+            # Create the tonal description of the lines
+
+            # Create mixers, set sample rate and amplitude
+            mixer = Mixer(48000, 0.5)
+            mixer2 = Mixer(48000, 0.5)
+            mixer3 = Mixer(48000, 0.5)
+            mixer4 = Mixer(48000, 0.5)
+            mixer5 = Mixer(48000, 0.5)
+            mixer6 = Mixer(48000, 0.5)
+            mixer7 = Mixer(48000, 0.5)
+            mixer8 = Mixer(48000, 0.5)
+
+            #line_data = {1: [(1, 22.31), (2, 22.85), (3, 23.12), (4, 18.55), (5, 16.13), (6, 40.59), (7, 36.29), (8, 29.3), (9, 39.25), (10, 35.48)], 2: [(1, 11.56), (2, 6.45), (3, 5.38), (4, 5.38), (5, 4.3), (6, 2.96), (7, 2.69), (8, 2.42), (9, 2.96), (10, 3.49)]}
+
+            # TODO get these values dynamically - Josh
+
+            smallest_min = 0
+            biggest_max = float(biggest_max)
+
+            max_frequency = 600  # D5
+            min_frequency = 200  # G3
+
             lines_vals = line_data.items()
+            mixer.create_track(1, SINE_WAVE, attack=0.005)
+            mixer2.create_track(1, SINE_WAVE, attack=0.005)
+            mixer3.create_track(1, SINE_WAVE, attack=0.005)
+            mixer4.create_track(1, SINE_WAVE, attack=0.005)
+            mixer5.create_track(1, SINE_WAVE, attack=0.005)
+            mixer6.create_track(1, SINE_WAVE, attack=0.005)
+            mixer7.create_track(1, SINE_WAVE, attack=0.005)
+            mixer8.create_track(1, SINE_WAVE, attack=0.005)
+            for key, values in lines_vals:
+                for i in range(len(values)):
+                    if key == 1:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer.add_silence(1, duration=0.15)
+                    if key == 2:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer2.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer2.add_silence(1, duration=0.15)
+                    if key == 3:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer3.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer3.add_silence(1, duration=0.15)
+                    if key == 4:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer4.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer4.add_silence(1, duration=0.15)
+                    if key == 5:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer5.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer5.add_silence(1, duration=0.15)
+                    if key == 6:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer6.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer6.add_silence(1, duration=0.15)
+                    if key == 7:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer7.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer7.add_silence(1, duration=0.15)
+                    if key == 8:
+                        x = values[i][0]
+                        y = values[i][1]
+                        print("key: " + str(key) + " x: " +
+                              str(x) + " y: " + str(y))
+                        if y == None:
+                            mixer.add_silence(1, duration=0.4)
+                        else:
+                            tone_frequency = (
+                                (max_frequency - min_frequency)*(y/(biggest_max - smallest_min))) + min_frequency
+                            mixer8.add_tone(
+                                1, frequency=tone_frequency, duration=0.25)
+                            mixer8.add_silence(1, duration=0.15)
+            num_lines = len(line_data)
+
+            if num_lines == 1:
+                mixer.write_wav('tonal_1.wav')
+            if num_lines == 2:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+            if num_lines == 3:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+                mixer3.write_wav('tonal_3.wav')
+            if num_lines == 4:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+                mixer3.write_wav('tonal_3.wav')
+                mixer4.write_wav('tonal_4.wav')
+            if num_lines == 5:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+                mixer3.write_wav('tonal_3.wav')
+                mixer4.write_wav('tonal_4.wav')
+                mixer5.write_wav('tonal_5.wav')
+            if num_lines == 6:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+                mixer3.write_wav('tonal_3.wav')
+                mixer4.write_wav('tonal_4.wav')
+                mixer5.write_wav('tonal_5.wav')
+                mixer6.write_wav('tonal_6.wav')
+            if num_lines == 7:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+                mixer3.write_wav('tonal_3.wav')
+                mixer4.write_wav('tonal_4.wav')
+                mixer5.write_wav('tonal_5.wav')
+                mixer6.write_wav('tonal_6.wav')
+                mixer7.write_wav('tonal_7.wav')
+            if num_lines == 8:
+                mixer.write_wav('tonal_1.wav')
+                mixer2.write_wav('tonal_2.wav')
+                mixer3.write_wav('tonal_3.wav')
+                mixer4.write_wav('tonal_4.wav')
+                mixer5.write_wav('tonal_5.wav')
+                mixer6.write_wav('tonal_6.wav')
+                mixer7.write_wav('tonal_7.wav')
+                mixer8.write_wav('tonal_8.wav')
+
             line_string = 'No line data'
             for key, values in lines_vals:
                 # lines_vals = [(xy), (xy), ....]
@@ -634,7 +829,7 @@ def t_upload():
             place_line_desc_buttons(num_lines)
             x_axis_pos = []
             y_axis_pos = []
-
+            t2.cancel()
             play_entire_graph_desc_fn(path)
 
     elif (file_path == ""):
@@ -682,7 +877,8 @@ def load_previous_graph_fn():
         for file in glob.glob("*.wav"):
             count += 1
 
-        prev_num_lines = count - 1
+        prev_num_lines = (count - 1)/2
+        print('__--- prev_num_lines: ' + str(prev_num_lines))
 
         place_line_desc_buttons(prev_num_lines)
         if play_entire_graph_desc_button["state"] == "disabled":
@@ -801,9 +997,42 @@ def play_line_desc(line_number):
     global p
     global wf
     global sound_file
+    global program_path
 
     if playing_bool or stream.is_active():
         stream.stop_stream()
+
+    print(os.getcwd())
+    sound_file = str(program_path) + r'\tonal_intro.wav'
+    print(sound_file)
+    wf = wave.open(sound_file, 'r')
+    print(' info: ', sound_file, " loaded")
+
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    stream_callback=callback)
+
+    while(stream.is_active()):
+        time.sleep(1)
+        print('waiting')
+
+    sound_file = "tonal_" + str(line_number) + ".wav"
+    # print(sound_file)
+    wf = wave.open(sound_file, 'r')
+    print(' info: ', sound_file, " loaded")
+
+    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                    channels=wf.getnchannels(),
+                    rate=wf.getframerate(),
+                    output=True,
+                    stream_callback=callback)
+
+    while(stream.is_active()):
+        time.sleep(1)
+        print('waiting')
+
     sound_file = str(line_number) + ".wav"
     # print(sound_file)
     wf = wave.open(sound_file, 'r')
@@ -888,32 +1117,32 @@ def key(event):
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '3':
-        if line_2_button["state"] == "normal":
+        if line_3_button["state"] == "normal":
             play_line_desc(3)
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '4':
-        if line_2_button["state"] == "normal":
+        if line_4_button["state"] == "normal":
             play_line_desc(4)
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '5':
-        if line_2_button["state"] == "normal":
+        if line_5_button["state"] == "normal":
             play_line_desc(5)
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '6':
-        if line_2_button["state"] == "normal":
+        if line_6_button["state"] == "normal":
             play_line_desc(6)
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '7':
-        if line_2_button["state"] == "normal":
+        if line_7_button["state"] == "normal":
             play_line_desc(7)
         else:
             print(" Error: Line desc not enabled")
     elif event.keysym == '8':
-        if line_2_button["state"] == "normal":
+        if line_8_button["state"] == "normal":
             play_line_desc(8)
         else:
             print(" Error: Line desc not enabled")
@@ -1398,6 +1627,7 @@ def find_coords(cropped_x_axis, cropped_y_axis):
 def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists):
     global x_axis_pos
     global y_axis_pos
+    global ref_points
     # dictionary stores the y coordinates of pixels along with how many times they appear at one y position
     y_values = {}
 
@@ -1453,11 +1683,11 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
         messagebox.showinfo(
-            title="Get x-axis", message="Double click at the origin and the end of the x-axis")
-        click_img_x_axis(cropped_img)
+            title="Get x-axis", message="Click at the top of the y-axis and drag to the right of the x-axis.")
+        click_img_axes()
         print(x_axis_pos)
-        y_pixel_line = x_axis_pos[0][1]
-        longest_yline_size = x_axis_pos[1][0] - x_axis_pos[0][0]
+        y_pixel_line = ref_points[1][1]
+        longest_yline_size = ref_points[1][0] - ref_points[0][0]
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
         x_axis_exists = True
@@ -1467,12 +1697,14 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
         print("The y-axis is ", longest_xline_size, " pixels long")
 
     else:
-        messagebox.showinfo(
-            title="Get y-axis", message="Double click at the origin and the end of the y-axis")
-        click_img_y_axis(cropped_img)
-        print(y_axis_pos)
-        x_pixel_line = y_axis_pos[0][0]
-        longest_xline_size = y_axis_pos[0][1] - y_axis_pos[1][1]
+        if len(ref_points) > 0:
+            pass
+        else:
+            messagebox.showinfo(
+                title="Get y-axis", message="Click at the top of the y-axis and drag to the right of the x-axis.")
+            click_img_axes()
+        x_pixel_line = ref_points[0][0]
+        longest_xline_size = ref_points[1][1] - ref_points[0][1]
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
         y_axis_exists = True
@@ -1485,24 +1717,55 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin
 
 
-def click_img_x_axis(cropped_img):
+def click_img_axes():
+    global ref_points
+    global draw_axes_img
+    global draw_axes_img_redo
+    draw_axes_img = draw_axes_img_redo.copy()
     cv2.namedWindow('image')
-    cv2.setMouseCallback('image', get_x_axis)
-    cv2.imshow('image', cropped_img)
-    # cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
+    cv2.setMouseCallback('image', get_axes)
+    cv2.imshow('image', draw_axes_img)
     cv2.waitKey(0)
-    if len(x_axis_pos) == 2:
-        cv2.destroyAllWindows()
 
 
-def click_img_y_axis(cropped_img):
-    cv2.namedWindow('image')
-    cv2.setMouseCallback('image', get_y_axis)
-    cv2.imshow('image', cropped_img)
-    # cv2.circle(cropped_img, (x_axis_pos[0], 5, (255, 0, 0)))
-    cv2.waitKey(0)
-    if len(y_axis_pos) == 2:
-        cv2.destroyAllWindows()
+def get_axes(event, x, y, flags, param):
+    # grab references to the global variables
+    global ref_points
+    global draw_axes_img
+
+    # if the left mouse button was clicked, record the starting
+    # (x, y) coordinates and indicate that cropping is being
+    # performed
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        ref_points = [(x, y)]
+        print(ref_points)
+
+    # check to see if the left mouse button was released
+    elif event == cv2.EVENT_LBUTTONUP:
+        #print(ref_points[0], type(ref_points))
+        # record the ending (x, y) coordinates and indicate that
+        # the cropping operation is finished
+        ref_points.append((x, y))
+        # draw a rectangle around the region of interest
+        cv2.rectangle(
+            draw_axes_img, ref_points[0], ref_points[1], (255, 0, 0), 1)
+        cv2.imshow("image", draw_axes_img)
+        t3 = threading.Thread(target=redraw, args=())
+        t3.start()
+        cv2.waitKey(0)
+
+
+def redraw():
+    global ref_points
+    if len(ref_points) == 2:
+        ans = messagebox.askyesno(
+            title="Redraw?", message="Would you like to redraw the rectangle?")
+        if ans == True:
+            #draw_axes_img = draw_axes_img_redo.copy()
+            click_img_axes()
+        else:
+            cv2.destroyAllWindows()
 
 
 def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size):
@@ -1867,8 +2130,11 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
     # cv2.imshow('image', y_axis_img)
     # cv2.waitKey(0)
     biggest_max = y_axis_values[0]
+    smallest_min = y_axis_values[-1]
+    if type(smallest_min) != float:
+        smallest_min = 0
 
-    return y_axis_values, biggest_max, y_axis_title
+    return y_axis_values, biggest_max, smallest_min, y_axis_title
 
 
 def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points):
@@ -1907,13 +2173,6 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
 
         else:
             datapoints.append([color_positions[i][1]])
-
-    # add colors to the datapoints_colors
-    for i in range(len(colors)):
-        if colors[i-1] == colors[i]:
-            datapoints_colors[-1].append(colors[i])
-        else:
-            datapoints_colors.append([colors[i]])
 
     # if a datapoint has more than 2 pixel values that means it has more than 2 consecutive pixel values.
     # add those values to a new list
