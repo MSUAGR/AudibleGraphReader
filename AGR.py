@@ -201,6 +201,8 @@ def t_upload():
             # print("newfilename: ", new_file_name)
 
             desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
+            ffmpeg_dest_path = desktop + "/AGR"
+            ffmpeg_src_path = program_path + r'\ffmpeg.exe'
             path = desktop + "/AGR/Graphs/" + new_file_name + "/"
 
             try:
@@ -211,7 +213,8 @@ def t_upload():
                 print(" info: Successfully created the directory %s" % path)
 
             shutil.copy(file_path, path)
-
+            shutil.copy(ffmpeg_src_path, ffmpeg_dest_path)
+            
             # change wrk dir to path of desktop
             os.chdir(path)
 
@@ -837,6 +840,7 @@ def t_upload():
         print(" info: User cancelled upload image")
     else:
         print("error with file submission")
+
 
 
 def load_previous_graph_fn():
