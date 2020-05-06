@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 5.4.2020
+# 5.7.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -922,25 +922,25 @@ def play_entire_graph_desc_fn(path):
     global sound_file
 
     if (os.path.isdir(path)):
-
         # delete .mp3 files
-        try:
-            dir_list = os.listdir(path)
-            #print('dirlist== ', dir_list)
-            for item in dir_list:
-                if item.endswith(".mp3"):
-                    loc = path+'\\'+item
-                    if os.path.isfile(loc):
-                        print(' info: removing unused mp3: ', path, ' ', item)
-                        os.remove(os.path.join(path, item))
-                    # else:
-                    #     print(' ERROR: path  ', loc)
-        except OSError as err:
-            print("OS error: {0}".format(err))
-        except:
-            print("Unexpected error while removing mp3 files:",
-                  sys.exc_info()[0])
-            raise
+        # try:
+        #     dir_list = os.listdir(path)
+        #     #print('dirlist== ', dir_list)
+        #     for item in dir_list:
+        #         if item.endswith(".mp3"):
+        #             loc = path+'\\'+item
+        #             if os.path.isfile(loc):
+
+        #                 print(' info: removing unused mp3: ', path, ' ', item)
+        #                 os.remove(os.path.join(path, item))
+        #             # else:
+        #             #     print(' ERROR: path  ', loc)
+        # # except OSError as err:
+        # #     print("OS error: {0}".format(err))
+        # except:
+        #     print("Unexpected error while removing mp3 files:",
+        #           sys.exc_info()[0])
+        #     raise
 
         if playing_bool or stream.is_active():
             stream.stop_stream()
@@ -1028,6 +1028,9 @@ def play_line_desc(line_number):
     if playing_bool or stream.is_active():
         stream.stop_stream()
 
+    # for child in GUI.winfo_children():
+    #     child.configure(state='disable')
+
     print(os.getcwd())
     sound_file = str(program_path) + r'\tonal_intro.wav'
     print(sound_file)
@@ -1055,14 +1058,17 @@ def play_line_desc(line_number):
                     output=True,
                     stream_callback=callback)
 
-    while(stream.is_active()):
-        time.sleep(1)
-        print('waiting')
+    # while(stream.is_active()):
+    #     time.sleep(1)
+    #     print('waiting')
 
     sound_file = str(line_number) + ".wav"
     # print(sound_file)
     wf = wave.open(sound_file, 'r')
     print(' info: ', sound_file, " loaded")
+
+    # for child in GUI.winfo_children():
+    #     child.configure(state='enable')
 
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                     channels=wf.getnchannels(),
