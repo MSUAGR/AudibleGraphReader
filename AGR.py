@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 5.4.2020
+# 5.6.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -71,6 +71,7 @@ global program_path
 global err_count
 global draw_axes_img
 global draw_axes_img_redo
+global active_line_desc_buttons
 
 program_path = os.getcwd()
 sound_file = ''
@@ -117,6 +118,7 @@ def wait():
 
 
 def t_upload():
+    global active_line_desc_buttons
     global load_previous_graph_button
     global play_entire_graph_desc_button
     global sound_file
@@ -832,6 +834,7 @@ def t_upload():
             prog_bar.place_forget()
 
             place_line_desc_buttons(num_lines)
+            active_line_desc_buttons = num_lines
             x_axis_pos = []
             y_axis_pos = []
             t2.cancel()
@@ -848,6 +851,7 @@ def load_previous_graph_fn():
     global file_path
     global play_entire_graph_desc_button
     global playing_bool
+    global active_line_desc_buttons
 
     if stream.is_active():
         print(' info: stream paused for load previous')
@@ -884,9 +888,11 @@ def load_previous_graph_fn():
             count += 1
 
         prev_num_lines = (count - 1)/2
+        active_line_desc_buttons = prev_num_lines
         #print('__--- prev_num_lines: ' + str(prev_num_lines))
 
         place_line_desc_buttons(prev_num_lines)
+
         if play_entire_graph_desc_button["state"] == "disabled":
             play_entire_graph_desc_button["state"] = "normal"
 
@@ -922,25 +928,6 @@ def play_entire_graph_desc_fn(path):
     global sound_file
 
     if (os.path.isdir(path)):
-        # delete .mp3 files
-        # try:
-        #     dir_list = os.listdir(path)
-        #     #print('dirlist== ', dir_list)
-        #     for item in dir_list:
-        #         if item.endswith(".mp3"):
-        #             loc = path+'\\'+item
-        #             if os.path.isfile(loc):
-
-        #                 print(' info: removing unused mp3: ', path, ' ', item)
-        #                 os.remove(os.path.join(path, item))
-        #             # else:
-        #             #     print(' ERROR: path  ', loc)
-        # # except OSError as err:
-        # #     print("OS error: {0}".format(err))
-        # except:
-        #     print("Unexpected error while removing mp3 files:",
-        #           sys.exc_info()[0])
-        #     raise
 
         if playing_bool or stream.is_active():
             stream.stop_stream()
@@ -971,27 +958,6 @@ def play_tutorial():
     global wf
     global sound_file
     global program_path
-
-    # For reference, here is the tut string:
-    # my_string = "At any time while using the Audible Graph Reader,
-    # you can press the ‘h’ key to load this tutorial. \n To upload a graph,
-    #  select the 'Upload Graph' button or use the ‘u’ key. Only images of
-    # .img, .jpg, .png, and .gif under 1 MB are accepted. \n To load a previous
-    #  graph, select the 'Load Previous Graph' or use the ‘i’ key. \n After
-    #  selecting the appropriate button, you will be prompted to choose a graph
-    #  from a file selection menu. \n Once the graph image is chosen, the program
-    #  will automatically analyze your selected graph. \n After analysis, the preview
-    #  window is populated with your selected image, and the graph’s description
-    #  will begin being audibly read to the user. \n At any time If a voice file
-    #  is ready to play, the space bar will pause or play the audio file. Once the
-    #  audio has finished playing, press the r key to replay the audio file. \n
-    # Navigating the description of the graph via the use of hotkeys: To hear the
-    #  entire graph’s description, hit the ‘`’ (tilde / accent key)(quote left).
-    # If the graph has multiple lines, use the number keys one through eight (1 – 8)
-    #  to hear a single line’s description. \n If you are finished hearing a graph’s
-    # description, you may choose to select a new graph with the ‘u’ key, or a
-    # previously loaded graph with the ‘i’ key. If you are finished with the program,
-    #  you may hit the escape key to exit."
 
     if (os.path.isdir(program_path)):
         if playing_bool or stream.is_active():
@@ -1024,16 +990,17 @@ def play_line_desc(line_number):
     global wf
     global sound_file
     global program_path
+    global active_line_desc_buttons
 
     if playing_bool or stream.is_active():
         stream.stop_stream()
 
-    # for child in GUI.winfo_children():
-    #     child.configure(state='disable')
+    remove_line_desc_buttons(8)
+    background.update()
 
     print(os.getcwd())
     sound_file = str(program_path) + r'\tonal_intro.wav'
-    print(sound_file)
+    # print(sound_file)
     wf = wave.open(sound_file, 'r')
     print(' info: ', sound_file, " loaded")
 
@@ -1045,7 +1012,7 @@ def play_line_desc(line_number):
 
     while(stream.is_active()):
         time.sleep(1)
-        #print('waiting')
+        # print('waiting')
 
     sound_file = "tonal_" + str(line_number) + ".wav"
     # print(sound_file)
@@ -1060,15 +1027,16 @@ def play_line_desc(line_number):
 
     while(stream.is_active()):
         time.sleep(1)
-        #print('waiting')
+        # print('waiting')
 
     sound_file = str(line_number) + ".wav"
     # print(sound_file)
     wf = wave.open(sound_file, 'r')
     print(' info: ', sound_file, " loaded")
+    print('active: ', active_line_desc_buttons)
 
-    # for child in GUI.winfo_children():
-    #     child.configure(state='enable')
+    place_line_desc_buttons(active_line_desc_buttons)
+    background.update()
 
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                     channels=wf.getnchannels(),
