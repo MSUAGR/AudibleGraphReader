@@ -214,7 +214,7 @@ def t_upload():
 
             shutil.copy(file_path, path)
             shutil.copy(ffmpeg_src_path, ffmpeg_dest_path)
-            
+
             # change wrk dir to path of desktop
             os.chdir(path)
 
@@ -271,6 +271,8 @@ def t_upload():
                              height=505, image=openImg)
             image.image = openImg
             image.place(x=160, y=120)
+            print(' info: ' + os.path.normpath(file_path) +
+                  " has been opened in the preview window")
 
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
                 cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
@@ -842,7 +844,6 @@ def t_upload():
         print("error with file submission")
 
 
-
 def load_previous_graph_fn():
     global file_path
     global play_entire_graph_desc_button
@@ -870,7 +871,8 @@ def load_previous_graph_fn():
         image.image = openImg
         image.place(x=160, y=120)
 
-        print(file_path + " has been opened in the preview window")
+        print(' info: ' + os.path.normpath(file_path) +
+              " has been opened in the preview window")
 
         # load json find num lines, load each aud file
         dir_path = os.path.dirname(os.path.realpath(file_path))
@@ -882,7 +884,7 @@ def load_previous_graph_fn():
             count += 1
 
         prev_num_lines = (count - 1)/2
-        print('__--- prev_num_lines: ' + str(prev_num_lines))
+        #print('__--- prev_num_lines: ' + str(prev_num_lines))
 
         place_line_desc_buttons(prev_num_lines)
         if play_entire_graph_desc_button["state"] == "disabled":
@@ -920,6 +922,26 @@ def play_entire_graph_desc_fn(path):
     global sound_file
 
     if (os.path.isdir(path)):
+
+        # delete .mp3 files
+        try:
+            dir_list = os.listdir(path)
+            #print('dirlist== ', dir_list)
+            for item in dir_list:
+                if item.endswith(".mp3"):
+                    loc = path+'\\'+item
+                    if os.path.isfile(loc):
+                        print(' info: removing unused mp3: ', path, ' ', item)
+                        os.remove(os.path.join(path, item))
+                    # else:
+                    #     print(' ERROR: path  ', loc)
+        except OSError as err:
+            print("OS error: {0}".format(err))
+        except:
+            print("Unexpected error while removing mp3 files:",
+                  sys.exc_info()[0])
+            raise
+
         if playing_bool or stream.is_active():
             stream.stop_stream()
 
