@@ -1176,7 +1176,7 @@ def key(event):
             tonal_enabled = False
             print(' info: Tonal Description DISABLED')
         elif tonal_enabled == False:
-            print(' info: Tonal Descriptions ENABLED *GUI may momentarily become unresponsive*')
+            print(' info: Tonal Descriptions ENABLED *GUI may become momentarily unresponsive*')
             tonal_enabled = True
 
 
