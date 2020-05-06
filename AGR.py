@@ -4,7 +4,7 @@
 # The Audible Graph Reader Project
 # Copyright 2020 Missouri State University
 
-# 5.7.2020
+# 5.4.2020
 
 # User must install pytesseract version 5
 # blank.wav/tutorial.wav must exist in same dir as this file
@@ -1045,7 +1045,7 @@ def play_line_desc(line_number):
 
     while(stream.is_active()):
         time.sleep(1)
-        print('waiting')
+        #print('waiting')
 
     sound_file = "tonal_" + str(line_number) + ".wav"
     # print(sound_file)
@@ -1058,9 +1058,9 @@ def play_line_desc(line_number):
                     output=True,
                     stream_callback=callback)
 
-    # while(stream.is_active()):
-    #     time.sleep(1)
-    #     print('waiting')
+    while(stream.is_active()):
+        time.sleep(1)
+        #print('waiting')
 
     sound_file = str(line_number) + ".wav"
     # print(sound_file)
