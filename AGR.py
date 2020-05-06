@@ -7,7 +7,11 @@
 # 5.6.2020
 
 # User must install pytesseract version 5
-# blank.wav/tutorial.wav must exist in same dir as this file
+
+# The following  must exist in same dir as this file:
+#       blank.wav, tutorial.wav, tonal_intro.wav, ffmpeg.exe, 
+#       agr.ico, AGRHorizontalLogo.png
+
 # USE: ./AGR.py
 
 import tkinter as tk
@@ -17,12 +21,12 @@ from tkinter import messagebox
 from tkinter.ttk import Progressbar
 from tkinter import ttk
 from PIL import ImageTk, Image, ImageEnhance
-import pyaudio
-import wave
+import pyaudio  
+import wave     # Handling wave sound files
 import time
 import os
 from gtts import gTTS
-import cv2
+import cv2      # For image processing
 import sys
 from datetime import datetime
 import glob
@@ -32,9 +36,9 @@ import shutil  # High level file operations (cp img)
 import numpy as np
 from collections import OrderedDict
 from operator import itemgetter
-import pytesseract
+import pytesseract  # OCR
 from pytesseract import Output
-import re
+import re       # Regular Expressions
 import statistics
 import math
 from itertools import islice
@@ -43,7 +47,7 @@ import subprocess
 import platform  # allows dev to check what os user is running
 import threading
 from statistics import mean
-from tones import SINE_WAVE
+from tones import SINE_WAVE     # For creating sounds as tonal descriptions
 from tones.mixer import Mixer
 from langdetect import detect_langs
 from langdetect import DetectorFactory
@@ -394,7 +398,7 @@ def t_upload():
                 "x_axis_values": J_X_AXIS_VALUES,  # LIST
                 "y_axis_title": J_Y_AXIS_TITLE,  # STRING
                 "y_axis_values": J_Y_AXIS_VALUES,  # LIST
-                "num_lines": J_NUM_LINES,
+                "num_lines": J_NUM_LINES,   
                 "found_colors": J_FOUND_COLORS,  # LIST OF RGB
                 "data_points": J_DATA_POINTS,  # LIST OF TUPLES
                 "origin": J_ORIGIN  # TUPLE
@@ -487,10 +491,6 @@ def t_upload():
             mixer6 = Mixer(48000, 0.5)
             mixer7 = Mixer(48000, 0.5)
             mixer8 = Mixer(48000, 0.5)
-
-            #line_data = {1: [(1, 22.31), (2, 22.85), (3, 23.12), (4, 18.55), (5, 16.13), (6, 40.59), (7, 36.29), (8, 29.3), (9, 39.25), (10, 35.48)], 2: [(1, 11.56), (2, 6.45), (3, 5.38), (4, 5.38), (5, 4.3), (6, 2.96), (7, 2.69), (8, 2.42), (9, 2.96), (10, 3.49)]}
-
-            # TODO get these values dynamically - Josh
 
             smallest_min = 0
             biggest_max = float(biggest_max)
@@ -661,6 +661,7 @@ def t_upload():
                 mixer8.write_wav('tonal_8.wav')
 
             line_string = 'No line data'
+            # This section populates the string for each line that is converted to the wave file to be read aloud to the user
             for key, values in lines_vals:
                 # lines_vals = [(xy), (xy), ....]
                 ys = []
@@ -1175,7 +1176,7 @@ def key(event):
             tonal_enabled = False
             print(' info: Tonal Description DISABLED')
         elif tonal_enabled == False:
-            print(' info: Tonal Descriptions ENABLED')
+            print(' info: Tonal Descriptions ENABLED *GUI may momentarily become unresponsive*')
             tonal_enabled = True
 
 
@@ -1668,12 +1669,12 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
 
     # the longest line is the first in the sorted dictionary
     longest_xline_size = list(sorted_ydict.values())[0]
-    # print(list(sorted_ydict.values())[1], 'gggg')
+    # print(list(sorted_ydict.values())[1])
     x_pixel_line = list(sorted_ydict.keys())[0]
 
     origin = (x_pixel_line, y_pixel_line)
 
-    print(" info: origin: ", origin)  # , 'aaaaa')
+    print(" info: origin: ", origin)
 
     # if the longest line is bigger than half the width of the page it is the x-axis
     if longest_yline_size > 0.5*cropped_x_pixels_width:
@@ -1711,7 +1712,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     # with open('listfile.txt', 'w') as filehandle:
     #     for listitem in ylist:
     #         filehandle.write('%s\n' % listitem)
-    # print("ffff", x_axis_exists)
+    # print(x_axis_exists)
     return y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin
 
 
@@ -2289,12 +2290,10 @@ def best_fit_slope(ys):
     # print(m, b)
     return(round(m, 2))
 
-    # TODO
-    # Insert to line desc using y val array
 
 
 def locate_tesseract():
-    global err_count
+    global err_count    # Tracks amount of failures when locating tesseract
     err_count += 1
     if err_count >= 5:
         ans = messagebox.askyesno(title='Exit?',
@@ -2438,13 +2437,14 @@ err_count = 0
 pytesseract.pytesseract.tesseract_cmd = locate_tesseract()
 print(" info: tesseract location set: ", pytesseract.pytesseract.tesseract_cmd)
 
-
 GUI.mainloop()
 
 # stop and close stream
 stream.stop_stream()
 stream.close()
 wf.close()
+
+
 
 # close PyAudio
 p.terminate()
