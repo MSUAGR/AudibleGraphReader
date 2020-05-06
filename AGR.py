@@ -71,8 +71,9 @@ global program_path
 global err_count
 global draw_axes_img
 global draw_axes_img_redo
-global active_line_desc_buttons
+global tonal_enabled
 
+tonal_enabled = False
 program_path = os.getcwd()
 sound_file = ''
 GUI = tk.Tk()
@@ -118,7 +119,6 @@ def wait():
 
 
 def t_upload():
-    global active_line_desc_buttons
     global load_previous_graph_button
     global play_entire_graph_desc_button
     global sound_file
@@ -834,7 +834,6 @@ def t_upload():
             prog_bar.place_forget()
 
             place_line_desc_buttons(num_lines)
-            active_line_desc_buttons = num_lines
             x_axis_pos = []
             y_axis_pos = []
             t2.cancel()
@@ -851,7 +850,6 @@ def load_previous_graph_fn():
     global file_path
     global play_entire_graph_desc_button
     global playing_bool
-    global active_line_desc_buttons
 
     if stream.is_active():
         print(' info: stream paused for load previous')
@@ -888,7 +886,6 @@ def load_previous_graph_fn():
             count += 1
 
         prev_num_lines = (count - 1)/2
-        active_line_desc_buttons = prev_num_lines
         #print('__--- prev_num_lines: ' + str(prev_num_lines))
 
         place_line_desc_buttons(prev_num_lines)
@@ -990,53 +987,46 @@ def play_line_desc(line_number):
     global wf
     global sound_file
     global program_path
-    global active_line_desc_buttons
+    global tonal_enabled
 
     if playing_bool or stream.is_active():
         stream.stop_stream()
 
-    remove_line_desc_buttons(8)
-    background.update()
+    if tonal_enabled == True:
+        # print(os.getcwd())
+        sound_file = str(program_path) + r'\tonal_intro.wav'
+        # print(sound_file)
+        wf = wave.open(sound_file, 'r')
+        print(' info: ', sound_file, " loaded")
 
-    print(os.getcwd())
-    sound_file = str(program_path) + r'\tonal_intro.wav'
-    # print(sound_file)
-    wf = wave.open(sound_file, 'r')
-    print(' info: ', sound_file, " loaded")
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True,
+                        stream_callback=callback)
 
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True,
-                    stream_callback=callback)
+        while(stream.is_active()):
+            time.sleep(1)
+            print('waiting')
 
-    while(stream.is_active()):
-        time.sleep(1)
-        # print('waiting')
+        sound_file = "tonal_" + str(line_number) + ".wav"
+        # print(sound_file)
+        wf = wave.open(sound_file, 'r')
+        print(' info: ', sound_file, " loaded")
 
-    sound_file = "tonal_" + str(line_number) + ".wav"
-    # print(sound_file)
-    wf = wave.open(sound_file, 'r')
-    print(' info: ', sound_file, " loaded")
+        stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
+                        channels=wf.getnchannels(),
+                        rate=wf.getframerate(),
+                        output=True,
+                        stream_callback=callback)
 
-    stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
-                    channels=wf.getnchannels(),
-                    rate=wf.getframerate(),
-                    output=True,
-                    stream_callback=callback)
-
-    while(stream.is_active()):
-        time.sleep(1)
-        # print('waiting')
+        while(stream.is_active()):
+            time.sleep(1)
+            print('waiting')
 
     sound_file = str(line_number) + ".wav"
     # print(sound_file)
     wf = wave.open(sound_file, 'r')
-    print(' info: ', sound_file, " loaded")
-    print('active: ', active_line_desc_buttons)
-
-    place_line_desc_buttons(active_line_desc_buttons)
-    background.update()
 
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                     channels=wf.getnchannels(),
@@ -1100,6 +1090,7 @@ def key(event):
     global line_7_button
     global line_8_button
     global path
+    global tonal_enabled
 
     if event.keysym == 'space':
         if pause_play_button["state"] == "normal":
@@ -1179,6 +1170,13 @@ def key(event):
             play_entire_graph_desc_fn(path)
         else:
             print(" Error: Explain Graph button not enabled")
+    elif event.keycode == 52:  # dollar sign, $
+        if tonal_enabled == True:
+            tonal_enabled = False
+            print(' info: Tonal Description DISABLED')
+        elif tonal_enabled == False:
+            print(' info: Tonal Descriptions ENABLED')
+            tonal_enabled = True
 
 
 def place_line_desc_buttons(number_of_lines):
