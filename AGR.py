@@ -921,11 +921,9 @@ def play_entire_graph_desc_fn(path):
 
         if playing_bool or stream.is_active():
             stream.stop_stream()
-
-        os.chdir(path)
+        
         sound_file = os.getcwd() + r'\everything.wav'
         sound_file = os.path.normpath(sound_file)
-
         wf = wave.open(sound_file, 'rb')
         print(' info: ', sound_file, " loaded")
 
