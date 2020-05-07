@@ -293,13 +293,33 @@ def t_upload():
                 return -1
 
             try:
-                line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(crop_img, y_pixel_line, x_pixel_line,
-                                                                                                x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
+                x_axis_values, x_axis_title, x_axis_value_medians = get_xdata(crop_img, y_pixel_line, x_pixel_line,
+                    x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
             except:
                 t2.cancel()
                 print("The x-axis data could not be found.")
                 messagebox.showerror(
                     title="AGR:Error", message="The x-axis data could not be found.")
+                os.chdir('..')
+                shutil.rmtree(path)
+                print("Bad image directory deleted")
+                proc_label.place_forget()
+                prog_bar.place_forget()
+                image.place_forget()
+                upload_button["state"] = "normal"
+                tutorial_button["state"] = "normal"
+                load_previous_graph_button["state"] = "normal"
+                exit_button["state"] = "normal"
+                return -1
+
+            try:
+                line_data, num_lines, line_colors_dict = get_datapoints(crop_img, x_axis_exists, 
+                    longest_xline_size, x_axis_values, x_axis_value_medians, y_pixel_line, y_axis_values)
+            except:
+                t2.cancel()
+                print("The datapoints could not be found.")
+                messagebox.showerror(
+                    title="AGR:Error", message="The datapoints could not be found.")
                 os.chdir('..')
                 shutil.rmtree(path)
                 print("Bad image directory deleted")
@@ -1750,35 +1770,7 @@ def get_xdata(crop_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values
     # list that holds the pixel value of the median of the box that surrounds each x-axis value
     x_axis_value_medians = []
 
-    # dictionary that holds the lines and the positions of the datapoints that exist on the graph
-    line_data = {}
-
-    # holds the minimum point for each line
-    min_points = {}
-
-    # holds the maximum point for each line
-    max_points = {}
-
-    # holds the coordinates of the x-axis values in pixels
-    x_axis_value_datapoints = []
-
-    # holds all the colors in one list that appear on the graph
-    new_datapoints_colors = []
-
-    # holds the colors in a list of lists, each sublist has a number of colors equal to the number of lines,
-    # the length of the list is the number of x-axis values
-    final_colors = []
-
-    # holds the coordinates where colors appear on the graph, has a sublist with length equal to the number of lines
-    # the length of the list is the number of x-axis values
-    new_datapoints = []
-
-    # holds a sublist with tuples containing all the y coordinate value and a number corresponding to the line number.
-    # eg [(1, 151), (2, 149)] where 151 and 149 are the y coordinates for the first two lines on the graph
-    line_positions = []
-
-    # the number of lines on the graph is stored in num_lines
-    num_lines = 0
+    
 
     not_space = ''
     space = ''
@@ -1840,6 +1832,114 @@ def get_xdata(crop_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values
     for i in range(len(x_axis_values)):
         median = round(left[i] + round(width[i] / 2))
         x_axis_value_medians.append(median)
+
+    # the data from the graph has boxes created around it
+    n_boxes2 = len(d2['level'])
+    for i in range(n_boxes2):
+        (x, y, w, h) = (d2['left'][i], d2['top']
+                        [i], d2['width'][i], d2['height'][i])
+        cv2.rectangle(x_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    return x_axis_values, x_axis_title, x_axis_value_medians
+
+
+def get_ydata(crop_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
+    y_axis_img = crop_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
+
+    
+    # gets data from image
+    d2 = pytesseract.image_to_data(y_axis_img, output_type=Output.DICT)
+    text = d2['text']
+    top = d2['top']
+    width = d2['width']
+
+    # list that holds the x axis values
+    y_axis_values = []
+
+    # list that holds the x axis title
+    y_axis_title = []
+
+    # list that holds the pixel value of the median of the box that surrounds each y-axis value
+    y_axis_value_medians = []
+
+    separated_text = []
+    new_text = []
+
+    # all the values that are not a space should be added to the x_axis_values list
+    for i in text:
+        if i != '':
+            new_text.append(i)
+            for i in range(len(new_text)):
+                separated_text.append(list(new_text[i]))
+
+            for i in range(len(separated_text)):
+                for j in range(len(separated_text[i])):
+                    if separated_text[i][j] == 'o' or separated_text[i][j] == 'O':
+                        separated_text[i][j] = '0'
+                    if separated_text[i][j] == 's' or separated_text[i][j] == 'S':
+                        separated_text[i][j] = '5'
+            if separated_text[i][j].isdigit():
+                y_axis_values.append("".join(separated_text[i]))
+            else:
+                y_axis_title.append(separated_text[i][j])
+
+    # all the values that are not a space that occur after the x axis values
+    for i in text:
+        if i != ''and i.isalpha():
+            y_axis_title.append(i)
+
+    if len(y_axis_title) == 0:
+        y_axis_title.append('None')
+    print("y-axis values", y_axis_values)
+    print("y-axis title", y_axis_title)
+
+    for i in range(len(y_axis_values)):
+        median = round(top[i] + round(width[i] / 2))
+        y_axis_value_medians.append(median)
+
+    n_boxes2 = len(d2['level'])
+    for i in range(n_boxes2):
+        (x, y, w, h) = (d2['left'][i], d2['top']
+                        [i], d2['width'][i], d2['height'][i])
+        cv2.rectangle(y_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    biggest_max = y_axis_values[0]
+    smallest_min = y_axis_values[-1]
+    if type(smallest_min) != float:
+        smallest_min = 0
+
+    return y_axis_values, biggest_max, smallest_min, y_axis_title
+
+def get_datapoints(crop_img, x_axis_exists, longest_xline_size, x_axis_values, x_axis_value_medians, y_pixel_line, y_axis_values):
+    # dictionary that holds the lines and the positions of the datapoints that exist on the graph
+    line_data = {}
+
+    # holds the minimum point for each line
+    min_points = {}
+
+    # holds the maximum point for each line
+    max_points = {}
+
+    # holds the coordinates of the x-axis values in pixels
+    x_axis_value_datapoints = []
+
+    # holds all the colors in one list that appear on the graph
+    new_datapoints_colors = []
+
+    # holds the colors in a list of lists, each sublist has a number of colors equal to the number of lines,
+    # the length of the list is the number of x-axis values
+    final_colors = []
+
+    # holds the coordinates where colors appear on the graph, has a sublist with length equal to the number of lines
+    # the length of the list is the number of x-axis values
+    new_datapoints = []
+
+    # holds a sublist with tuples containing all the y coordinate value and a number corresponding to the line number.
+    # eg [(1, 151), (2, 149)] where 151 and 149 are the y coordinates for the first two lines on the graph
+    line_positions = []
+    
+    # the number of lines on the graph is stored in num_lines
+    num_lines = 0
 
     # holds the x pixel value for the median of each x-axis value box
     x_axis_points = 0
@@ -1993,83 +2093,7 @@ def get_xdata(crop_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values
     print("Minimum points: ", min_points)
     print("Maximum points: ", max_points)
 
-    # the data from the graph has boxes created around it
-    n_boxes2 = len(d2['level'])
-    for i in range(n_boxes2):
-        (x, y, w, h) = (d2['left'][i], d2['top']
-                        [i], d2['width'][i], d2['height'][i])
-        cv2.rectangle(x_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    return line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict
-
-
-def get_ydata(crop_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
-    y_axis_img = crop_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
-
-    
-    # gets data from image
-    d2 = pytesseract.image_to_data(y_axis_img, output_type=Output.DICT)
-    text = d2['text']
-    top = d2['top']
-    width = d2['width']
-
-    # list that holds the x axis values
-    y_axis_values = []
-
-    # list that holds the x axis title
-    y_axis_title = []
-
-    # list that holds the pixel value of the median of the box that surrounds each y-axis value
-    y_axis_value_medians = []
-
-    separated_text = []
-    new_text = []
-
-    # all the values that are not a space should be added to the x_axis_values list
-    for i in text:
-        if i != '':
-            new_text.append(i)
-            for i in range(len(new_text)):
-                separated_text.append(list(new_text[i]))
-
-            for i in range(len(separated_text)):
-                for j in range(len(separated_text[i])):
-                    if separated_text[i][j] == 'o' or separated_text[i][j] == 'O':
-                        separated_text[i][j] = '0'
-                    if separated_text[i][j] == 's' or separated_text[i][j] == 'S':
-                        separated_text[i][j] = '5'
-            if separated_text[i][j].isdigit():
-                y_axis_values.append("".join(separated_text[i]))
-            else:
-                y_axis_title.append(separated_text[i][j])
-
-    # all the values that are not a space that occur after the x axis values
-    for i in text:
-        if i != ''and i.isalpha():
-            y_axis_title.append(i)
-
-    if len(y_axis_title) == 0:
-        y_axis_title.append('None')
-    print("y-axis values", y_axis_values)
-    print("y-axis title", y_axis_title)
-
-    for i in range(len(y_axis_values)):
-        median = round(top[i] + round(width[i] / 2))
-        y_axis_value_medians.append(median)
-
-    n_boxes2 = len(d2['level'])
-    for i in range(n_boxes2):
-        (x, y, w, h) = (d2['left'][i], d2['top']
-                        [i], d2['width'][i], d2['height'][i])
-        cv2.rectangle(y_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    biggest_max = y_axis_values[0]
-    smallest_min = y_axis_values[-1]
-    if type(smallest_min) != float:
-        smallest_min = 0
-
-    return y_axis_values, biggest_max, smallest_min, y_axis_title
-
+    return line_data, num_lines, line_colors_dict
 
 def get_line_positions(crop_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points):
     colors = []
