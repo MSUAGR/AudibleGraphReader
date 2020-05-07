@@ -64,11 +64,8 @@ else:
     sys.exit()
 
 # Global
-x_axis_pos = []
-y_axis_pos = []
 ref_points = []
 playing_bool = False
-global img
 global file_path
 global path
 global program_path
@@ -134,8 +131,6 @@ def t_upload():
     global pause_play_button
     global replay_button
     global exit_button
-    global x_axis_pos
-    global y_axis_pos
     global playing_bool
     global draw_axes_img
     global draw_axes_img_redo
@@ -145,8 +140,6 @@ def t_upload():
         stream.stop_stream()
         playing_bool = False
 
-    x_axis_pos = []
-    y_axis_pos = []
     file_path = filedialog.askopenfilename(title="Select Graph Image", filetypes=[
         ("Image Files", ".png .jpg .gif .img .jpeg")])
 
@@ -204,7 +197,6 @@ def t_upload():
             timestamp = str(round(datetime.timestamp(now)))
 
             new_file_name = og_file_name + "." + timestamp
-            # print("newfilename: ", new_file_name)
 
             desktop = os.path.normpath(os.path.expanduser("~/Desktop"))
             ffmpeg_dest_path = desktop + "/AGR"
@@ -247,22 +239,18 @@ def t_upload():
             print(' info: Image Size: ', img_size)
             y_pixels_height = img.shape[0]
             x_pixels_width = img.shape[1]
-            # [10: y_pixels_height-10, 10: x_pixels_width-10]
-            cropped_img = img
-            cropped_y_pixels_height = img.shape[0]
-            cropped_x_pixels_width = img.shape[1]
-            # print(cropped_img.shape)
+            crop_img = img
             x_axis_exists = True
             y_axis_exists = True
 
             prog_bar.step(10)  # 20%
             background.update()
 
-            cropped_x_axis = cropped_img[round(
-                cropped_y_pixels_height*0.7): cropped_y_pixels_height, 0: cropped_x_pixels_width]
+            cropped_x_axis = crop_img[round(
+                y_pixels_height*0.7): y_pixels_height, 0: x_pixels_width]
 
-            cropped_y_axis = cropped_img[0: cropped_y_pixels_height, 0: round(
-                cropped_x_pixels_width*0.3)]
+            cropped_y_axis = crop_img[0: y_pixels_height, 0: round(
+                x_pixels_width*0.3)]
 
             xcoords, ycoords = find_coords(cropped_x_axis, cropped_y_axis)
 
@@ -281,12 +269,12 @@ def t_upload():
                   " has been opened in the preview window")
 
             y_pixel_line, x_pixel_line, longest_yline_size, longest_xline_size, x_axis_exists, y_axis_exists, origin = store_coords(
-                cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists)
+                crop_img, xcoords, ycoords, x_pixels_width, y_pixels_height, x_axis_exists, y_axis_exists)
             t2 = threading.Timer(30, wait)
             t2.start()
             try:
                 y_axis_values, biggest_max, smallest_min, y_axis_title = get_ydata(
-                    cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
+                    crop_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size)
             except:
                 t2.cancel()
                 print('The y-axis data could not be found')
@@ -305,7 +293,7 @@ def t_upload():
                 return -1
 
             try:
-                line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(cropped_img, y_pixel_line, x_pixel_line,
+                line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict = get_xdata(crop_img, y_pixel_line, x_pixel_line,
                                                                                                 x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size)
             except:
                 t2.cancel()
@@ -349,16 +337,13 @@ def t_upload():
 
             try:
                 # custom_config = r'-l grc+tha+eng --psm 6'
-                # my_string = pytesseract.image_to_string(img, config=custom_config)
-                # pytesseract.image_to_string(img)#, lang='eng')
+                # my_string = pytesseract.image_to_string(crop_img, config=custom_config)
+                # pytesseract.image_to_string(crop_img)#, lang='eng')
                 # Language object Output: image4.gif langlist =  [en:0.5714262601246318, it:0.4285717316776206]
                 lang_list = detect_langs(all_text)
                 lang_found = False
-                # print('langlist = ', lang_list)
 
                 for item in lang_list:
-                    # print(item.lang)
-                    # print(item.prob)
                     if item.lang == 'en' and item.prob > 0.5:
                         lang_found = True
 
@@ -427,15 +412,7 @@ def t_upload():
             f.close()
 
             aud_text = ''
-            line_1_text = ''
-            line_2_text = ''
-            line_3_text = ''
-            line_4_text = ''
-            line_5_text = ''
-            line_6_text = ''
-            line_7_text = ''
-            line_8_text = ''
-
+        
             if J_GRAPH_TITLE == 'None':
                 aud_text += "The graph title could not be found. \n"
             else:
@@ -783,7 +760,6 @@ def t_upload():
             prog_bar.step(10)  # 60%
             background.update()
 
-            #print(' info: creating everything.wav')
             src_mp3 = '"' + path + "audTex.mp3" + '"'
             des_wav = ' "' + path + "everything.wav" + '"'
             ffmpeg_path = '"' + desktop + "\\AGR\\ffmpeg.exe" + ' "'
@@ -835,8 +811,6 @@ def t_upload():
             prog_bar.place_forget()
 
             place_line_desc_buttons(num_lines)
-            x_axis_pos = []
-            y_axis_pos = []
             t2.cancel()
             play_entire_graph_desc_fn(path)
 
@@ -879,7 +853,6 @@ def load_previous_graph_fn():
 
         # load json find num lines, load each aud file
         dir_path = os.path.dirname(os.path.realpath(file_path))
-        # print("dirPath: " + dir_path)
 
         os.chdir(dir_path)
         count = 0
@@ -887,7 +860,6 @@ def load_previous_graph_fn():
             count += 1
 
         prev_num_lines = (count - 1)/2
-        #print('__--- prev_num_lines: ' + str(prev_num_lines))
 
         place_line_desc_buttons(prev_num_lines)
 
@@ -994,9 +966,7 @@ def play_line_desc(line_number):
         stream.stop_stream()
 
     if tonal_enabled == True:
-        # print(os.getcwd())
         sound_file = str(program_path) + r'\tonal_intro.wav'
-        # print(sound_file)
         wf = wave.open(sound_file, 'r')
         print(' info: ', sound_file, " loaded")
 
@@ -1011,7 +981,6 @@ def play_line_desc(line_number):
             print('waiting')
 
         sound_file = "tonal_" + str(line_number) + ".wav"
-        # print(sound_file)
         wf = wave.open(sound_file, 'r')
         print(' info: ', sound_file, " loaded")
 
@@ -1026,7 +995,6 @@ def play_line_desc(line_number):
             print('waiting')
 
     sound_file = str(line_number) + ".wav"
-    # print(sound_file)
     wf = wave.open(sound_file, 'r')
 
     stream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
@@ -1044,7 +1012,7 @@ def replay():
     global wf
     global sound_file
 
-    if str(sound_file) != '':  # This doesnt work
+    if str(sound_file) != '':
 
         if playing_bool or stream.is_active():
             stream.stop_stream()
@@ -1604,7 +1572,7 @@ def find_coords(cropped_x_axis, cropped_y_axis):
     mask = gray < threshold_level
 
     # color the pixels in the mask
-    # cropped_img[mask] = (204, 119, 0)
+    # crop_img[mask] = (204, 119, 0)
 
     gray = cv2.cvtColor(cropped_y_axis, cv2.COLOR_BGR2GRAY)
 
@@ -1618,14 +1586,12 @@ def find_coords(cropped_x_axis, cropped_y_axis):
     mask = gray < threshold_level
 
     # color the pixels in the mask
-    # cropped_img[mask] = (204, 119, 0)
+    # crop_img[mask] = (204, 119, 0)
 
     return xcoords, ycoords
 
 
-def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_y_pixels_height, x_axis_exists, y_axis_exists):
-    global x_axis_pos
-    global y_axis_pos
+def store_coords(crop_img, xcoords, ycoords, x_pixels_width, y_pixels_height, x_axis_exists, y_axis_exists):
     global ref_points
     # dictionary stores the y coordinates of pixels along with how many times they appear at one y position
     y_values = {}
@@ -1648,7 +1614,7 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     # the longest line is the first in the sorted dictionary
     longest_yline_size = list(sorted_xdict.values())[0]
     y_pixel_line = list(sorted_xdict.keys())[
-        0] + round(cropped_y_pixels_height*0.7)
+        0] + round(y_pixels_height*0.7)
 
     x_values = {}
 
@@ -1677,21 +1643,20 @@ def store_coords(cropped_img, xcoords, ycoords, cropped_x_pixels_width, cropped_
     print(" info: origin: ", origin)
 
     # if the longest line is bigger than half the width of the page it is the x-axis
-    if longest_yline_size > 0.5*cropped_x_pixels_width:
+    if longest_yline_size > 0.5*x_pixels_width:
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
     else:
         messagebox.showinfo(
             title="Get x-axis", message="Click at the top of the y-axis and drag to the right of the x-axis.")
         click_img_axes()
-        print(x_axis_pos)
         y_pixel_line = ref_points[1][1]
         longest_yline_size = ref_points[1][0] - ref_points[0][0]
         print("The x-axis is at y pixel ", y_pixel_line)
         print("The x-axis is ", longest_yline_size, " pixels long")
         x_axis_exists = True
 
-    if longest_xline_size > 0.5*cropped_y_pixels_height:
+    if longest_xline_size > 0.5*y_pixels_height:
         print("The y-axis is at x pixel ", x_pixel_line)
         print("The y-axis is ", longest_xline_size, " pixels long")
 
@@ -1733,8 +1698,7 @@ def get_axes(event, x, y, flags, param):
     global draw_axes_img
 
     # if the left mouse button was clicked, record the starting
-    # (x, y) coordinates and indicate that cropping is being
-    # performed
+    # (x, y) coordinates 
 
     if event == cv2.EVENT_LBUTTONDOWN:
         ref_points = [(x, y)]
@@ -1742,9 +1706,7 @@ def get_axes(event, x, y, flags, param):
 
     # check to see if the left mouse button was released
     elif event == cv2.EVENT_LBUTTONUP:
-        #print(ref_points[0], type(ref_points))
-        # record the ending (x, y) coordinates and indicate that
-        # the cropping operation is finished
+        # record the ending (x, y) coordinates
         ref_points.append((x, y))
         # draw a rectangle around the region of interest
         cv2.rectangle(
@@ -1761,26 +1723,23 @@ def redraw():
         ans = messagebox.askyesno(
             title="Redraw?", message="Would you like to redraw the rectangle?")
         if ans == True:
-            #draw_axes_img = draw_axes_img_redo.copy()
             click_img_axes()
         else:
             cv2.destroyAllWindows()
 
 
-def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size):
-    cropped_y_pixels_height = cropped_img.shape[0]
-    cropped_x_pixels_width = cropped_img.shape[1]
+def get_xdata(crop_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_values, longest_yline_size, longest_xline_size):
+    y_pixels_height = crop_img.shape[0]
+    x_pixels_width = crop_img.shape[1]
 
-    x_axis_img = cropped_img[y_pixel_line +
-                             5: cropped_y_pixels_height, 0: cropped_x_pixels_width]
+    x_axis_img = crop_img[y_pixel_line +
+                             5: y_pixels_height, 0: x_pixels_width]
 
     # gets data from image
     d2 = pytesseract.image_to_data(x_axis_img, output_type=Output.DICT)
     text = d2['text']
-    top = d2['top']
     left = d2['left']
     width = d2['width']
-    # the most common value in the top list should be the number of pixels from the bounding box to x-axis values
 
     # list that holds the x axis values
     x_axis_values = []
@@ -1800,7 +1759,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     # holds the maximum point for each line
     max_points = {}
 
-    # holds the coordinates of the x-axis values
+    # holds the coordinates of the x-axis values in pixels
     x_axis_value_datapoints = []
 
     # holds all the colors in one list that appear on the graph
@@ -1868,9 +1827,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
 
     if len(x_axis_title) == 0:
         x_axis_title.append('None')
-    # the points where the x axis values appear on the x axis should be this many pixels
-    # key_x_axis_values = round(longest_line_size / len(x_axis_values))
-    # print("Every ", key_x_axis_values, " pixels there is a key point")
 
     # the number of pixels each x-axis value box is from the left
     left = left[first_value:]
@@ -1898,7 +1854,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
         x_axis_points = x_axis_value_medians[i]
         try:
             res, col, top_of_graph, fin_col = get_line_positions(
-                cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points)
+                crop_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points)
         except:
             print('Error')
             return
@@ -1920,6 +1876,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
 
     if num_lines > 8:
         raise Exception("Too many lines")
+
     # colors are being stored in this dict. If the colors at the first x-axis value are not equal to the actual number
     # of lines, eg if a datapoint is covered by another, check several lines
     line_colors_dict = {}
@@ -1939,7 +1896,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     buffer = 10
     for i in range(len(colors)):
         num_colors = len(colors)
-        print('lines lol', colors)
         for j in range(num_colors):
             if j == i:
                 pass
@@ -1949,8 +1905,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                         and colors[i][2] in range(colors[j][2]-buffer, colors[j][2]+buffer):
                     raise Exception(
                         "You cannot have multiple lines with the same color")
-                else:
-                    print('no no no')
+                
 
     print('Line Colours: ', line_colors_dict)  # LINE COLORS
 
@@ -1971,7 +1926,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
 
         # iterate over the number of points on the graph per x-axis value
         for j in range(num_lines):
-
             first_val = list(line_colors_dict.values())[j]
             if None in final_colors[i][j][1]:
                 correct_final_colors[j].append(
@@ -1999,7 +1953,7 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     line_positions = [[] for k in range(num_lines)]
     yAxis_values = []
     yAxis_values = calculate_yAxis_values(
-        cropped_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph)
+        crop_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph)
 
     # each sublist in line_positions represents each line's y coordinates and a number from 1 to the number of x-axis values
     # eg [[(1, 213), (2, 222)], (1,124), (2, 211)] there are two lines and two x-axis values. the value on the right in
@@ -2039,10 +1993,6 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
     print("Minimum points: ", min_points)
     print("Maximum points: ", max_points)
 
-    '''
-    print("The points where colors exist are at x, y pixel: ", new_datapoints)
-    print("The colors at the corresponding positions are: ", new_datapoints_colors)
-    '''
     # the data from the graph has boxes created around it
     n_boxes2 = len(d2['level'])
     for i in range(n_boxes2):
@@ -2050,29 +2000,18 @@ def get_xdata(cropped_img, y_pixel_line, x_pixel_line, x_axis_exists, y_axis_val
                         [i], d2['width'][i], d2['height'][i])
         cv2.rectangle(x_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # cv2.imshow('image', x_axis_img)
-    # cv2.waitKey(0)
-
     return line_data, x_axis_values, num_lines, x_axis_title, line_colors_dict
 
 
-def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
-    cropped_y_pixels_height = cropped_img.shape[0]
-    cropped_x_pixels_width = cropped_img.shape[1]
+def get_ydata(crop_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xline_size):
+    y_axis_img = crop_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
 
-    y_axis_img = cropped_img[0: y_pixel_line + 10, 0: x_pixel_line-5]
-
+    
     # gets data from image
     d2 = pytesseract.image_to_data(y_axis_img, output_type=Output.DICT)
     text = d2['text']
     top = d2['top']
-    left = d2['left']
     width = d2['width']
-
-    # print(d2)
-
-    # the most common value in the top list should be the number of pixels from the bounding box to x-axis values
-    most_common = max(set(left), key=left.count)
 
     # list that holds the x axis values
     y_axis_values = []
@@ -2090,7 +2029,6 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
     for i in text:
         if i != '':
             new_text.append(i)
-
             for i in range(len(new_text)):
                 separated_text.append(list(new_text[i]))
 
@@ -2100,7 +2038,6 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
                         separated_text[i][j] = '0'
                     if separated_text[i][j] == 's' or separated_text[i][j] == 'S':
                         separated_text[i][j] = '5'
-            # print("".join(separated_text[i]))
             if separated_text[i][j].isdigit():
                 y_axis_values.append("".join(separated_text[i]))
             else:
@@ -2126,8 +2063,6 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
                         [i], d2['width'][i], d2['height'][i])
         cv2.rectangle(y_axis_img, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    # cv2.imshow('image', y_axis_img)
-    # cv2.waitKey(0)
     biggest_max = y_axis_values[0]
     smallest_min = y_axis_values[-1]
     if type(smallest_min) != float:
@@ -2136,14 +2071,15 @@ def get_ydata(cropped_img, x_pixel_line, y_pixel_line, y_axis_exists, longest_xl
     return y_axis_values, biggest_max, smallest_min, y_axis_title
 
 
-def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points):
+def get_line_positions(crop_img, x_axis_exists, y_pixel_line, longest_xline_size, x_axis_points):
     colors = []
     color_positions = []
     final_colors = []
     datapoints = []
-    datapoints_colors = []
+
     # new_datapoints holds the correct datapoints
     new_datapoints = []
+
     # new_datapoints_colors holds the correct datapoints colors
     new_datapoints_colors = []
 
@@ -2157,12 +2093,11 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
         top_of_graph = 0
 
     for i in range(int(top_of_graph), int(y_pixel_line)):
-        pix = cropped_img[i, x_axis_points]
+        pix = crop_img[i, x_axis_points]
         if pix[0] > 230 and pix[1] > 230 and pix[2] > 230 or pix[0] < 30 and pix[1] < 30 and pix[2] < 30:
             continue
         else:
             color_positions.append([x_axis_points, i])
-            # cropped_img[151, 73] = (0, 0, 0)
             colors.append(list(pix))
 
     # finds the consecutive y pixel values and groups them into lists
@@ -2188,7 +2123,7 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
     # add to a new list the colors that appear at the specified datapoints
     for i in range(len(new_datapoints)):
         # colors at the positions where datapoints exist
-        d = cropped_img[new_datapoints[i][1], x_axis_points]
+        d = crop_img[new_datapoints[i][1], x_axis_points]
         if d[0] > 230 and d[1] > 230 and d[2] > 230:
             continue
         else:
@@ -2202,12 +2137,11 @@ def get_line_positions(cropped_img, x_axis_exists, y_pixel_line, longest_xline_s
     return new_datapoints, new_datapoints_colors, top_of_graph, final_colors
 
 
-def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph):
-    cropped_y_pixels_height = cropped_img.shape[0]
-    cropped_x_pixels_width = cropped_img.shape[1]
+def calculate_yAxis_values(crop_img, y_pixel_line, new_datapoints, correct_final_colors, num_lines, y_axis_values, top_of_graph):
+    y_pixels_height = crop_img.shape[0]
 
-    top_of_graph = cropped_y_pixels_height - top_of_graph
-    y_pixel_line = cropped_y_pixels_height - y_pixel_line
+    top_of_graph = y_pixels_height - top_of_graph
+    y_pixel_line = y_pixels_height - y_pixel_line
     datapoints = [[] for k in range(num_lines)]
     distance_from_top_to_x_axis = top_of_graph - y_pixel_line
     top_y_axis_val = y_axis_values[0]
@@ -2223,26 +2157,10 @@ def calculate_yAxis_values(cropped_img, y_pixel_line, new_datapoints, correct_fi
                 datapoints[j].append(None)
             else:
                 yAxis_values = round(
-                    ((cropped_y_pixels_height - float(y_axis_datapoint_pixel)) - y_pixel_line) / pixels_divider, 2)
+                    ((y_pixels_height - float(y_axis_datapoint_pixel)) - y_pixel_line) / pixels_divider, 2)
 
                 datapoints[j].append(yAxis_values)
     return datapoints
-
-
-def get_x_axis(event, x, y, flags, param):
-    global x_axis_pos
-    if event == cv2.EVENT_LBUTTONDBLCLK:
-        x_axis_pos.append((x, y))
-    if len(x_axis_pos) == 2:
-        cv2.destroyAllWindows()
-
-
-def get_y_axis(event, x, y, flags, param):
-    global y_axis_pos
-    if event == cv2.EVENT_LBUTTONDBLCLK:
-        y_axis_pos.append((x, y))
-    if len(y_axis_pos) == 2:
-        cv2.destroyAllWindows()
 
 
 def get_graph_title(image_path):
@@ -2443,8 +2361,6 @@ GUI.mainloop()
 stream.stop_stream()
 stream.close()
 wf.close()
-
-
 
 # close PyAudio
 p.terminate()
