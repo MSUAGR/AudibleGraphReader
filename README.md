@@ -23,7 +23,7 @@ The AGR.py program can be placed anywhere accessible to the user, such as the De
 ●	ffmpeg.exe 
 
 # To Run:
- Install pytesseract v5.0.0
- Place the above files within their own directory
- Run AGR.py with no arguments:
+ Install pytesseract v5.0.0  
+ Place the above files within their own directory  
+ Run AGR.py with no arguments:  
  ./AGR.py
